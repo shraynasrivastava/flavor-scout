@@ -1,23 +1,27 @@
-// Reddit Post types
-export interface RedditPost {
+// News Article types
+export interface NewsArticle {
   id: string;
   title: string;
-  selftext: string;
-  subreddit: string;
+  content: string;
+  source: string;
   author: string;
   score: number;
-  created_utc: number;
-  num_comments: number;
+  publishedAt: number;
+  commentCount: number;
   url: string;
 }
 
-export interface RedditComment {
+export interface ContentExcerpt {
   id: string;
   body: string;
   author: string;
   score: number;
-  created_utc: number;
+  publishedAt: number;
 }
+
+// Legacy type aliases for compatibility
+export type RedditPost = NewsArticle;
+export type RedditComment = ContentExcerpt;
 
 // Flavor analysis types
 export interface FlavorMention {
@@ -99,12 +103,15 @@ export interface AnalysisResponse {
   analyzedAt: string;
 }
 
-export interface RedditFetchResponse {
-  posts: RedditPost[];
-  comments: RedditComment[];
-  subreddits: string[];
+export interface NewsFetchResponse {
+  articles: NewsArticle[];
+  excerpts: ContentExcerpt[];
+  sources: string[];
   fetchedAt: string;
 }
+
+// Legacy alias
+export type RedditFetchResponse = NewsFetchResponse;
 
 // Dashboard state
 export interface DashboardState {
@@ -113,4 +120,3 @@ export interface DashboardState {
   data: AnalysisResponse | null;
   selectedBrand: Brand | 'all';
 }
-

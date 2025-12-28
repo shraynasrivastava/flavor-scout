@@ -3,10 +3,10 @@
 import { motion } from 'framer-motion';
 
 const loadingSteps = [
-  { text: 'Connecting to Reddit API', icon: '🔌' },
-  { text: 'Fetching supplement discussions', icon: '📡' },
-  { text: 'Analyzing flavor mentions', icon: '🔍' },
-  { text: 'Running AI sentiment analysis', icon: '🧠' },
+  { text: 'Connecting to NewsAPI', icon: '🔌' },
+  { text: 'Fetching supplement & fitness news', icon: '📡' },
+  { text: 'Searching HealthKart, MuscleBlaze articles', icon: '🔍' },
+  { text: 'Running AI flavor analysis', icon: '🧠' },
   { text: 'Generating recommendations', icon: '✨' }
 ];
 
@@ -77,7 +77,7 @@ export default function LoadingState() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
           >
-            Analyzing real social media trends with AI
+            Analyzing news & industry trends with AI
           </motion.p>
           
           {/* Loading Steps */}

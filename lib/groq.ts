@@ -1,7 +1,7 @@
 import Groq from 'groq-sdk';
 import { 
-  RedditPost, 
-  RedditComment, 
+  NewsArticle, 
+  ContentExcerpt, 
   TrendKeyword, 
   FlavorRecommendation, 
   GoldenCandidate,
@@ -20,13 +20,13 @@ function getGroqClient(): Groq {
 }
 
 // Combine articles and content into analyzable text
-function prepareTextForAnalysis(posts: RedditPost[], comments: RedditComment[]): string {
-  const articleTexts = posts.map(p => 
-    `[ARTICLE from ${p.subreddit}]\nHeadline: ${p.title}\n${p.selftext}`
+function prepareTextForAnalysis(articles: NewsArticle[], excerpts: ContentExcerpt[]): string {
+  const articleTexts = articles.map(a => 
+    `[ARTICLE from ${a.source}]\nHeadline: ${a.title}\n${a.content}`
   ).join('\n\n---\n\n');
   
-  const contentTexts = comments.map(c => 
-    `[ARTICLE CONTENT from ${c.author}]\n${c.body}`
+  const contentTexts = excerpts.map(e => 
+    `[CONTENT from ${e.author}]\n${e.body}`
   ).join('\n\n');
   
   return `=== NEWS ARTICLES ===\n${articleTexts}\n\n=== ARTICLE CONTENT ===\n${contentTexts}`;
@@ -119,8 +119,8 @@ Analyze the news articles and industry content below and provide:
 
 // Analyze content using Groq LLM
 export async function analyzeWithGroq(
-  posts: RedditPost[], 
-  comments: RedditComment[]
+  articles: NewsArticle[], 
+  excerpts: ContentExcerpt[]
 ): Promise<{
   trendKeywords: TrendKeyword[];
   recommendations: FlavorRecommendation[];
@@ -128,12 +128,12 @@ export async function analyzeWithGroq(
   dataQuality: { postsAnalyzed: number; commentsAnalyzed: number; relevantDiscussions: number };
 }> {
   const client = getGroqClient();
-  const textContent = prepareTextForAnalysis(posts, comments);
+  const textContent = prepareTextForAnalysis(articles, excerpts);
   const fullPrompt = ANALYSIS_PROMPT + textContent;
 
   try {
     const completion = await client.chat.completions.create({
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       messages: [
         {
           role: 'system',
@@ -212,11 +212,11 @@ export async function analyzeWithGroq(
     }
 
     const dataQuality = {
-      postsAnalyzed: posts.length,
-      commentsAnalyzed: comments.length,
+      postsAnalyzed: articles.length,
+      commentsAnalyzed: excerpts.length,
       relevantDiscussions: parsed.dataQuality?.relevantDiscussions != null 
         ? Number(parsed.dataQuality.relevantDiscussions) 
-        : Math.min(posts.length, 20)
+        : Math.min(articles.length, 20)
     };
 
     return { trendKeywords, recommendations, goldenCandidate, dataQuality };
@@ -236,7 +236,7 @@ export async function validateGroqCredentials(): Promise<boolean> {
   try {
     const client = getGroqClient();
     await client.chat.completions.create({
-      model: 'llama-3.1-70b-versatile',
+      model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: 'test' }],
       max_tokens: 5
     });
