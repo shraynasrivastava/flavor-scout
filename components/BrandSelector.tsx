@@ -2,6 +2,7 @@
 
 import { Brand, BRAND_PROFILES } from '@/lib/types';
 import { motion } from 'framer-motion';
+import { Target, Dumbbell, Leaf, Sparkles } from 'lucide-react';
 
 interface BrandSelectorProps {
   selected: Brand | 'all';
@@ -9,15 +10,15 @@ interface BrandSelectorProps {
 }
 
 export default function BrandSelector({ selected, onSelect }: BrandSelectorProps) {
-  const brands: { id: Brand | 'all'; label: string; color: string; icon: string }[] = [
-    { id: 'all', label: 'All Brands', color: '#8B5CF6', icon: '🎯' },
-    { id: 'MuscleBlaze', label: 'MuscleBlaze', color: BRAND_PROFILES['MuscleBlaze'].color, icon: '💪' },
-    { id: 'HK Vitals', label: 'HK Vitals', color: BRAND_PROFILES['HK Vitals'].color, icon: '🌿' },
-    { id: 'TrueBasics', label: 'TrueBasics', color: BRAND_PROFILES['TrueBasics'].color, icon: '✨' }
+  const brands: { id: Brand | 'all'; label: string; color: string; icon: React.ReactNode; tagline: string }[] = [
+    { id: 'all', label: 'All Brands', color: '#8B5CF6', icon: <Target className="w-5 h-5" />, tagline: 'View all recommendations' },
+    { id: 'MuscleBlaze', label: 'MuscleBlaze', color: BRAND_PROFILES['MuscleBlaze'].color, icon: <Dumbbell className="w-5 h-5" />, tagline: 'For gym enthusiasts' },
+    { id: 'HK Vitals', label: 'HK Vitals', color: BRAND_PROFILES['HK Vitals'].color, icon: <Leaf className="w-5 h-5" />, tagline: 'Daily wellness' },
+    { id: 'TrueBasics', label: 'TrueBasics', color: BRAND_PROFILES['TrueBasics'].color, icon: <Sparkles className="w-5 h-5" />, tagline: 'Premium quality' }
   ];
   
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-3">
       {brands.map((brand, index) => {
         const isSelected = selected === brand.id;
         
@@ -27,26 +28,38 @@ export default function BrandSelector({ selected, onSelect }: BrandSelectorProps
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            whileHover={{ scale: 1.05, y: -1 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03, y: -2 }}
+            whileTap={{ scale: 0.97 }}
             onClick={() => onSelect(brand.id)}
             className={`
-              relative px-4 py-2 rounded-xl text-sm font-medium 
-              transition-all duration-300 flex items-center gap-2
+              relative px-5 py-3 rounded-xl font-medium 
+              transition-all duration-300 flex items-center gap-3
               ${isSelected 
-                ? 'text-white' 
-                : 'text-slate-400 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50'
+                ? 'text-white shadow-lg' 
+                : 'text-slate-400 bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:text-slate-200'
               }
             `}
             style={isSelected ? {
-              backgroundColor: `${brand.color}20`,
+              backgroundColor: `${brand.color}25`,
               color: brand.color,
-              border: `2px solid ${brand.color}60`,
-              boxShadow: `0 0 25px ${brand.color}25`
+              border: `2px solid ${brand.color}70`,
+              boxShadow: `0 4px 30px ${brand.color}30`
             } : undefined}
           >
-            <span className="text-base">{brand.icon}</span>
-            <span className="hidden sm:inline">{brand.label}</span>
+            <motion.div 
+              className={`p-2 rounded-lg ${isSelected ? '' : 'bg-slate-700/50'}`}
+              style={isSelected ? { backgroundColor: `${brand.color}30` } : undefined}
+              animate={{ rotate: isSelected ? [0, -5, 5, 0] : 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              {brand.icon}
+            </motion.div>
+            <div className="text-left">
+              <span className="block text-sm font-semibold">{brand.label}</span>
+              <span className={`block text-[10px] ${isSelected ? 'opacity-80' : 'text-slate-500'}`}>
+                {brand.tagline}
+              </span>
+            </div>
             {isSelected && (
               <motion.div
                 layoutId="brand-indicator"

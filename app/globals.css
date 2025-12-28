@@ -1,7 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --font-space-grotesk: 'Space Grotesk', sans-serif;
+  --font-plus-jakarta: 'Plus Jakarta Sans', sans-serif;
+  --font-inter: 'Inter', sans-serif;
   --font-jetbrains: 'JetBrains Mono', monospace;
   
   /* Brand Colors */
@@ -34,7 +35,7 @@ html {
 }
 
 body {
-  font-family: var(--font-space-grotesk);
+  font-family: var(--font-plus-jakarta), var(--font-inter), system-ui, sans-serif;
   min-height: 100vh;
   background: var(--bg-primary);
   background-image: 
@@ -42,6 +43,16 @@ body {
     radial-gradient(ellipse 60% 60% at 100% 100%, rgba(255, 107, 53, 0.08), transparent),
     radial-gradient(ellipse 60% 60% at 0% 100%, rgba(78, 205, 196, 0.08), transparent);
   background-attachment: fixed;
+  letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings use Plus Jakarta Sans */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-plus-jakarta), sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 /* Custom scrollbar */
@@ -316,4 +327,144 @@ body {
   background: linear-gradient(90deg, var(--accent-emerald) 0%, var(--hk-vitals) 100%);
   border-radius: 9999px;
   transition: width 0.5s ease;
+}
+
+/* Enhanced interactive elements */
+.interactive-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.interactive-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.03),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.interactive-card:hover::before {
+  left: 100%;
+}
+
+/* Micro-interaction: Ripple effect */
+.ripple-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.ripple-effect::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.ripple-effect:active::after {
+  width: 200%;
+  height: 200%;
+}
+
+/* Smooth focus states */
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: none;
+  ring: 2px solid var(--accent-cyan);
+  ring-offset: 2px;
+  ring-offset-color: var(--bg-primary);
+}
+
+/* Enhanced scrollbar for data sections */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.3) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* Data visualization enhancements */
+.data-value {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  letter-spacing: -0.02em;
+}
+
+/* Animated counter effect */
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-count {
+  animation: countUp 0.5s ease-out forwards;
+}
+
+/* Enhanced hover states for cards */
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.3);
+}
+
+/* Loading skeleton pulse */
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.7; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.1) 0%, rgba(148, 163, 184, 0.2) 50%, rgba(148, 163, 184, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+/* Focus ring for accessibility */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.4);
+}
+
+/* Tooltip arrow styling */
+.tooltip-arrow {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: inherit;
+  transform: rotate(45deg);
 }

@@ -2,12 +2,30 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  BarChart3, 
+  Flame, 
+  CheckCircle2, 
+  Clock, 
+  RefreshCw, 
+  Zap, 
+  TrendingUp,
+  AlertTriangle,
+  Crown,
+  Brain,
+  Sparkles,
+  IceCream,
+  ThumbsDown,
+  Package,
+  ChevronDown,
+  Lightbulb
+} from 'lucide-react';
 import TrendWall from '@/components/TrendWall';
 import DecisionEngine from '@/components/DecisionEngine';
 import GoldenCandidate from '@/components/GoldenCandidate';
 import BrandSelector from '@/components/BrandSelector';
 import LoadingState from '@/components/LoadingState';
-import { AnalysisResponse, Brand, FlavorRecommendation } from '@/lib/types';
+import { AnalysisResponse, Brand, FlavorRecommendation, NegativeMention } from '@/lib/types';
 
 interface ApiError {
   error: string;
@@ -77,7 +95,7 @@ export default function Dashboard() {
   if (loading) return <LoadingState />;
 
   if (error) {
-    return (
+  return (
       <div className="min-h-screen flex items-center justify-center p-4">
         <div className="noise-overlay" />
         <motion.div
@@ -135,28 +153,28 @@ export default function Dashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             {/* Logo & Title */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-5">
               <motion.div 
-                className="relative"
+                className="relative p-4 rounded-2xl bg-gradient-to-br from-amber-500/25 to-orange-600/25 border border-amber-500/40 shadow-lg shadow-amber-500/20"
                 animate={{ rotate: [0, 5, -5, 0] }}
                 transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               >
-                <span className="text-5xl">🍦</span>
-                <motion.div
-                  className="absolute -top-1 -right-1 text-lg"
+                <IceCream className="w-10 h-10 sm:w-12 sm:h-12 text-amber-400" />
+              <motion.div
+                className="absolute -top-1 -right-1"
                   animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  ✨
+                  <Sparkles className="w-5 h-5 text-yellow-400" />
                 </motion.div>
               </motion.div>
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight">
                   Flavor Scout
                 </h1>
-                <p className="text-sm text-slate-400 hidden sm:block">
+                <p className="text-base sm:text-lg text-slate-400 mt-1">
                   AI-Powered Flavor Trend Discovery for{' '}
-                  <span className="text-gradient-brand font-medium">HealthKart</span>
+                  <span className="text-gradient-brand font-semibold">HealthKart</span>
                 </p>
               </div>
             </div>
@@ -167,10 +185,11 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 {/* Cache indicator */}
                 {cacheInfo && !loading && (
-                  <span className="text-xs text-slate-500 hidden sm:block">
+                  <span className="text-xs text-slate-500 hidden sm:block flex items-center gap-1">
+                    <Package className="w-3 h-3" />
                     {cacheInfo.usedCache 
-                      ? `📦 Cached (${Math.floor(cacheInfo.cacheAgeSeconds / 60)}m ago)`
-                      : '🔄 Fresh data'
+                      ? `Cached (${Math.floor(cacheInfo.cacheAgeSeconds / 60)}m ago)`
+                      : 'Fresh data'
                     }
                   </span>
                 )}
@@ -181,12 +200,12 @@ export default function Dashboard() {
                   className="btn-secondary flex items-center gap-2 px-4 py-2 rounded-xl text-slate-300 text-sm font-medium"
                   title="Use cached data if available"
                 >
-                  <motion.span
+                  <motion.div
                     animate={{ rotate: loading ? 360 : 0 }}
                     transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
                   >
-                    🔄
-                  </motion.span>
+                    <RefreshCw className="w-4 h-4" />
+                  </motion.div>
                   <span className="hidden sm:inline">Refresh</span>
                 </motion.button>
                 <motion.button
@@ -196,7 +215,7 @@ export default function Dashboard() {
                   className="btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium"
                   title="Force fetch new data from NewsAPI"
                 >
-                  ⚡
+                  <Zap className="w-4 h-4" />
                   <span className="hidden sm:inline">Force New</span>
                 </motion.button>
               </div>
@@ -212,37 +231,64 @@ export default function Dashboard() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-2 lg:grid-cols-5 gap-4"
         >
           <StatCard 
-            icon="📊" 
+            icon={<BarChart3 className="w-6 h-6" />}
             value={data?.rawPostCount || 0} 
-            label="News Articles Analyzed" 
+            label="Articles Analyzed" 
             color="purple"
             delay={0}
           />
           <StatCard 
-            icon="🔥" 
+            icon={<Flame className="w-6 h-6" />}
             value={data?.trendKeywords.length || 0} 
             label="Trending Keywords" 
             color="orange"
             delay={0.1}
           />
           <StatCard 
-            icon="✅" 
+            icon={<CheckCircle2 className="w-6 h-6" />}
             value={data?.recommendations.filter(r => r.status === 'selected').length || 0} 
             label="Selected Ideas" 
             color="emerald"
             delay={0.2}
           />
           <StatCard 
-            icon="🕐" 
+            icon={<ThumbsDown className="w-6 h-6" />}
+            value={data?.negativeMentions?.length || 0} 
+            label="Pain Points Found" 
+            color="red"
+            delay={0.25}
+          />
+          <StatCard 
+            icon={<Clock className="w-6 h-6" />}
             value={data?.analyzedAt ? formatTime(data.analyzedAt) : '-'} 
             label="Last Updated" 
             color="cyan"
             delay={0.3}
           />
         </motion.div>
+
+        {/* Analysis Insights Summary */}
+        {data?.analysisInsights && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="glass-card rounded-2xl p-6 border-l-4 border-purple-500"
+          >
+            <div className="flex items-start gap-4">
+              <div className="p-2 rounded-lg bg-purple-500/20 border border-purple-500/30">
+                <Brain className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white mb-2">AI Market Analysis</h3>
+                <p className="text-slate-300 leading-relaxed">{data.analysisInsights}</p>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Golden Candidate - Hero Section (filtered by selected brand) */}
         <AnimatePresence>
@@ -254,7 +300,8 @@ export default function Dashboard() {
               transition={{ duration: 0.5, delay: 0.2 }}
             >
               <SectionHeader 
-                icon="👑" 
+                icon={<Crown className="w-6 h-6 text-yellow-400" />}
+                iconBg="bg-yellow-500/20 border-yellow-500/30"
                 title="Golden Recommendation" 
                 subtitle={selectedBrand === 'all' 
                   ? "The #1 flavor opportunity based on AI analysis of industry news"
@@ -274,11 +321,29 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.3 }}
           >
             <SectionHeader 
-              icon="📈" 
-              title="Trend Wall" 
-              subtitle="Trending flavor keywords from news and industry content"
+              icon={<TrendingUp className="w-7 h-7 text-emerald-400" />}
+              iconBg="bg-emerald-500/20 border-emerald-500/30"
+              title="Flavor Trend Wall" 
+              subtitle="Real-time flavor keywords trending in health & fitness industry — click any tag for details"
             />
             <TrendWall keywords={data.trendKeywords} />
+          </motion.section>
+        )}
+
+        {/* Negative Mentions / Pain Points */}
+        {data?.negativeMentions && data.negativeMentions.length > 0 && (
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.35 }}
+          >
+            <SectionHeader 
+              icon={<AlertTriangle className="w-6 h-6 text-red-400" />}
+              iconBg="bg-red-500/20 border-red-500/30"
+              title="Consumer Pain Points" 
+              subtitle="Complaints and issues to address with new flavors"
+            />
+            <NegativeMentionsPanel mentions={data.negativeMentions} />
           </motion.section>
         )}
 
@@ -290,7 +355,8 @@ export default function Dashboard() {
             transition={{ duration: 0.5, delay: 0.4 }}
           >
             <SectionHeader 
-              icon="🧠" 
+              icon={<Brain className="w-6 h-6 text-purple-400" />}
+              iconBg="bg-purple-500/20 border-purple-500/30"
               title="AI Decision Engine" 
               subtitle={selectedBrand === 'all' 
                 ? "All AI-curated flavor recommendations with reasoning" 
@@ -308,19 +374,19 @@ export default function Dashboard() {
           className="pt-12 pb-6 border-t border-slate-800/50 text-center"
         >
           <div className="flex justify-center items-center gap-2 mb-4">
-            <span className="text-2xl">🍦</span>
-            <span className="text-slate-400 text-sm">Flavor Scout</span>
+            <IceCream className="w-6 h-6 text-amber-400" />
+            <span className="text-slate-400 text-sm font-medium">Flavor Scout</span>
           </div>
           <p className="text-slate-500 text-sm mb-2">
             Powered by <span className="text-purple-400">Groq AI</span> + <span className="text-orange-400">NewsAPI</span>
           </p>
           <div className="flex justify-center items-center gap-4 text-sm">
-            <span className="text-[#FF6B35]">● MuscleBlaze</span>
-            <span className="text-[#4ECDC4]">● HK Vitals</span>
-            <span className="text-[#9B59B6]">● TrueBasics</span>
-          </div>
+            <span className="text-[#FF6B35] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#FF6B35]" /> MuscleBlaze</span>
+            <span className="text-[#4ECDC4] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#4ECDC4]" /> HK Vitals</span>
+            <span className="text-[#9B59B6] flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#9B59B6]" /> TrueBasics</span>
+        </div>
           <p className="text-slate-600 text-xs mt-4">
-            Built with ❤️ for HealthKart by Shrayna Srivastava
+            Built for HealthKart by Shrayna Srivastava
           </p>
         </motion.footer>
       </main>
@@ -341,31 +407,199 @@ function formatTime(isoString: string): string {
 // Section Header Component
 function SectionHeader({ 
   icon, 
+  iconBg,
   title, 
   subtitle,
   highlight = false 
 }: { 
-  icon: string; 
+  icon: React.ReactNode; 
+  iconBg?: string;
   title: string; 
   subtitle: string;
   highlight?: boolean;
 }) {
   return (
-    <div className="mb-6">
+    <div className="mb-8">
       <motion.h2 
-        className={`text-xl sm:text-2xl font-bold text-white flex items-center gap-3 ${highlight ? 'text-gradient' : ''}`}
+        className={`text-2xl sm:text-3xl font-bold text-white flex items-center gap-4 ${highlight ? 'text-gradient' : ''}`}
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
       >
-        <span className="text-2xl sm:text-3xl">{icon}</span>
+        <div className={`p-3 rounded-xl border ${iconBg || 'bg-slate-500/20 border-slate-500/30'}`}>
+          {icon}
+        </div>
         {title}
       </motion.h2>
-      <p className="text-slate-400 text-sm mt-1 ml-10 sm:ml-12">{subtitle}</p>
+      <p className="text-slate-400 text-base mt-2 ml-16">{subtitle}</p>
     </div>
   );
 }
 
-// Enhanced Stat Card Component
+// Negative Mentions Panel Component - Enhanced with clickable cards
+function NegativeMentionsPanel({ mentions }: { mentions: NegativeMention[] }) {
+  const [selectedMention, setSelectedMention] = useState<NegativeMention | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const maxFrequency = Math.max(...mentions.map(m => m.frequency), 1);
+  
+  // Sort by frequency descending
+  const sortedMentions = [...mentions].sort((a, b) => b.frequency - a.frequency);
+
+  // Generate opportunity suggestion based on complaint
+  const getOpportunity = (mention: NegativeMention) => {
+    const complaint = mention.complaint.toLowerCase();
+    if (complaint.includes('sweet')) return `Launch a "Less Sweet" or "Dark" variant of ${mention.flavor} to address this demand`;
+    if (complaint.includes('artificial')) return `Introduce a "Natural" or "Clean Label" version with real ${mention.flavor} extract`;
+    if (complaint.includes('bland')) return `Create an "Intense" or "Bold" ${mention.flavor} variant with stronger flavor profile`;
+    if (complaint.includes('chalky')) return `Reformulate with improved texture using premium ingredients`;
+    if (complaint.includes('expensive')) return `Consider a value pack or subscription discount for loyal customers`;
+    return `Address feedback with improved ${mention.flavor} formula based on user preferences`;
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="glass-card rounded-2xl p-6"
+    >
+      {/* Summary stats */}
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-700/30">
+        <div className="flex items-center gap-6">
+          <div className="text-center">
+            <p className="text-3xl font-bold text-red-400">{mentions.length}</p>
+            <p className="text-xs text-slate-500">Flavor Issues</p>
+          </div>
+          <div className="h-10 w-px bg-slate-700/50" />
+          <div className="text-center">
+            <p className="text-3xl font-bold text-orange-400">
+              {mentions.reduce((acc, m) => acc + m.frequency, 0)}
+            </p>
+            <p className="text-xs text-slate-500">Total Reviews</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-500/10 px-3 py-2 rounded-lg border border-emerald-500/20">
+          <Lightbulb className="w-4 h-4" />
+          <span>Click to see opportunity</span>
+        </div>
+      </div>
+
+      {/* Grid of pain point cards */}
+      <div className="grid sm:grid-cols-2 gap-4">
+        {sortedMentions.map((mention, index) => {
+          const barWidth = (mention.frequency / maxFrequency) * 100;
+          const isHovered = hoveredIndex === index;
+          const isSelected = selectedMention?.flavor === mention.flavor;
+          
+          return (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.08 }}
+              onClick={() => setSelectedMention(isSelected ? null : mention)}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className={`
+                relative cursor-pointer rounded-xl overflow-hidden
+                border-2 transition-all duration-300
+                ${isSelected 
+                  ? 'border-emerald-500/60 bg-emerald-900/20 shadow-lg shadow-emerald-500/20' 
+                  : isHovered 
+                    ? 'border-red-500/50 bg-red-900/20 shadow-lg shadow-red-500/10' 
+                    : 'border-slate-700/30 bg-slate-800/30'
+                }
+              `}
+            >
+              {/* Progress bar background */}
+              <motion.div
+                className={`absolute inset-y-0 left-0 ${isSelected ? 'bg-gradient-to-r from-emerald-500/20 to-emerald-600/5' : 'bg-gradient-to-r from-red-500/20 to-red-600/5'}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${barWidth}%` }}
+                transition={{ delay: index * 0.08 + 0.2, duration: 0.5, ease: "easeOut" }}
+              />
+              
+              {/* Content */}
+              <div className="relative p-5">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`
+                      flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center font-bold text-lg
+                      ${isSelected ? 'bg-emerald-500/30 text-emerald-400' : 'bg-red-500/20 text-red-400'}
+                      transition-colors
+                    `}>
+                      {mention.frequency}×
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-white text-lg capitalize">{mention.flavor}</h4>
+                      <span className="text-xs text-slate-500">{mention.source}</span>
+                    </div>
+                  </div>
+                  <motion.div
+                    animate={{ rotate: isSelected ? 180 : 0 }}
+                    className={`p-1.5 rounded-lg ${isSelected ? 'bg-emerald-500/20' : 'bg-slate-700/50'}`}
+                  >
+                    <ChevronDown className={`w-4 h-4 ${isSelected ? 'text-emerald-400' : 'text-slate-400'}`} />
+                  </motion.div>
+                </div>
+                
+                {/* Complaint */}
+                <p className={`text-sm mb-3 ${isSelected ? 'text-slate-200' : 'text-slate-400'}`}>
+                  <span className="text-red-400 font-medium">Issue: </span>
+                  {mention.complaint}
+                </p>
+                
+                {/* Expanded opportunity */}
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="pt-3 border-t border-slate-700/50"
+                    >
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <div>
+                          <p className="text-xs text-emerald-400 font-semibold uppercase tracking-wider mb-1">
+                            Opportunity
+                          </p>
+                          <p className="text-sm text-emerald-200">
+                            {getOpportunity(mention)}
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </motion.div>
+          );
+        })}
+      </div>
+
+      {/* Summary insight */}
+      {mentions.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-6 pt-4 border-t border-slate-700/30 flex items-center justify-between"
+        >
+          <p className="text-sm text-slate-400 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-yellow-400" />
+            <span>Every complaint is a potential product improvement</span>
+          </p>
+          <span className="text-xs text-slate-500">Based on customer reviews</span>
+        </motion.div>
+      )}
+    </motion.div>
+  );
+}
+
+// Enhanced Stat Card Component with micro-interactions
 function StatCard({ 
   icon, 
   value, 
@@ -373,36 +607,59 @@ function StatCard({
   color,
   delay = 0 
 }: { 
-  icon: string; 
+  icon: React.ReactNode; 
   value: string | number; 
   label: string;
-  color: 'purple' | 'orange' | 'emerald' | 'cyan';
+  color: 'purple' | 'orange' | 'emerald' | 'cyan' | 'red';
   delay?: number;
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+  
   const colorStyles = {
     purple: {
-      gradient: 'from-purple-500/20 to-purple-600/5',
-      border: 'border-purple-500/20',
+      gradient: 'from-purple-500/20 via-purple-600/10 to-transparent',
+      border: 'border-purple-500/30',
+      hoverBorder: 'hover:border-purple-400/50',
       text: 'text-purple-400',
-      glow: 'hover:shadow-purple-500/20'
+      glow: 'shadow-purple-500/25',
+      iconBg: 'bg-purple-500/20',
+      ring: 'ring-purple-500/20'
     },
     orange: {
-      gradient: 'from-orange-500/20 to-orange-600/5',
-      border: 'border-orange-500/20',
+      gradient: 'from-orange-500/20 via-orange-600/10 to-transparent',
+      border: 'border-orange-500/30',
+      hoverBorder: 'hover:border-orange-400/50',
       text: 'text-orange-400',
-      glow: 'hover:shadow-orange-500/20'
+      glow: 'shadow-orange-500/25',
+      iconBg: 'bg-orange-500/20',
+      ring: 'ring-orange-500/20'
     },
     emerald: {
-      gradient: 'from-emerald-500/20 to-emerald-600/5',
-      border: 'border-emerald-500/20',
+      gradient: 'from-emerald-500/20 via-emerald-600/10 to-transparent',
+      border: 'border-emerald-500/30',
+      hoverBorder: 'hover:border-emerald-400/50',
       text: 'text-emerald-400',
-      glow: 'hover:shadow-emerald-500/20'
+      glow: 'shadow-emerald-500/25',
+      iconBg: 'bg-emerald-500/20',
+      ring: 'ring-emerald-500/20'
     },
     cyan: {
-      gradient: 'from-cyan-500/20 to-cyan-600/5',
-      border: 'border-cyan-500/20',
+      gradient: 'from-cyan-500/20 via-cyan-600/10 to-transparent',
+      border: 'border-cyan-500/30',
+      hoverBorder: 'hover:border-cyan-400/50',
       text: 'text-cyan-400',
-      glow: 'hover:shadow-cyan-500/20'
+      glow: 'shadow-cyan-500/25',
+      iconBg: 'bg-cyan-500/20',
+      ring: 'ring-cyan-500/20'
+    },
+    red: {
+      gradient: 'from-red-500/20 via-red-600/10 to-transparent',
+      border: 'border-red-500/30',
+      hoverBorder: 'hover:border-red-400/50',
+      text: 'text-red-400',
+      glow: 'shadow-red-500/25',
+      iconBg: 'bg-red-500/20',
+      ring: 'ring-red-500/20'
     },
   };
 
@@ -412,28 +669,55 @@ function StatCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      whileHover={{ scale: 1.02, y: -2 }}
+      transition={{ delay, duration: 0.4, ease: "easeOut" }}
+      whileHover={{ scale: 1.02, y: -3 }}
+      whileTap={{ scale: 0.98 }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       className={`
-        glass-card glass-card-hover rounded-xl p-4 sm:p-5 
+        relative overflow-hidden rounded-xl p-4 sm:p-5 cursor-pointer
         bg-gradient-to-br ${styles.gradient} 
-        border ${styles.border}
-        transition-all duration-300 ${styles.glow} hover:shadow-lg
+        border ${styles.border} ${styles.hoverBorder}
+        transition-all duration-300
+        ${isHovered ? `shadow-lg ${styles.glow}` : ''}
       `}
     >
-      <div className="flex items-center gap-3 sm:gap-4">
-        <motion.span 
-          className="text-3xl sm:text-4xl"
-          animate={{ scale: [1, 1.1, 1] }}
-          transition={{ duration: 2, repeat: Infinity, delay }}
+      {/* Animated background glow */}
+      <motion.div 
+        className={`absolute inset-0 bg-gradient-to-r ${styles.gradient} opacity-0`}
+        animate={{ opacity: isHovered ? 0.5 : 0 }}
+        transition={{ duration: 0.3 }}
+      />
+      
+      {/* Shimmer effect on hover */}
+      {isHovered && (
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent"
+          initial={{ x: '-100%' }}
+          animate={{ x: '200%' }}
+          transition={{ duration: 0.8, ease: "easeInOut" }}
+        />
+      )}
+      
+      <div className="relative flex items-center gap-3 sm:gap-4">
+        <motion.div 
+          className={`p-2.5 rounded-xl ${styles.iconBg} ${styles.text} ring-1 ${styles.ring}`}
+          animate={{ 
+            scale: isHovered ? 1.1 : 1,
+            rotate: isHovered ? [0, -5, 5, 0] : 0
+          }}
+          transition={{ duration: 0.3 }}
         >
           {icon}
-        </motion.span>
+        </motion.div>
         <div>
-          <p className={`text-2xl sm:text-3xl font-bold ${styles.text} stat-number`}>
+          <motion.p 
+            className={`text-2xl sm:text-3xl font-bold ${styles.text} stat-number`}
+            animate={{ scale: isHovered ? 1.05 : 1 }}
+          >
             {value}
-          </p>
-          <p className="text-xs sm:text-sm text-slate-400">{label}</p>
+          </motion.p>
+          <p className="text-xs sm:text-sm text-slate-400 font-medium">{label}</p>
         </div>
       </div>
     </motion.div>

@@ -2,34 +2,57 @@
 
 **AI-Powered Flavor Trend Discovery Engine for HealthKart**
 
-Flavor Scout is a web dashboard that analyzes **news articles and industry content** using AI to discover viral flavor opportunities for HealthKart's brands: **MuscleBlaze**, **HK Vitals**, and **TrueBasics**.
+Flavor Scout is an intelligent web dashboard that analyzes **real-time news articles and industry content** using advanced AI to discover viral flavor opportunities for HealthKart's brands: **MuscleBlaze**, **HK Vitals**, and **TrueBasics**.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js) ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwind-css) ![Groq](https://img.shields.io/badge/Groq-AI-FF6B35) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Data-4A90A4)
+![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js) ![Tailwind](https://img.shields.io/badge/Tailwind-CSS-38B2AC?logo=tailwind-css) ![Groq](https://img.shields.io/badge/Groq-AI-FF6B35) ![NewsAPI](https://img.shields.io/badge/NewsAPI-Data-4A90A4) ![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?logo=typescript)
 
 ---
 
-## ✨ Features
+## 🎯 The Mission
 
-### 🔥 Trend Wall
-- Interactive word cloud showing trending flavor keywords
-- Frequency bar chart with sentiment indicators (positive/negative/neutral)
-- Real-time visualization of what the industry is discussing
+HealthKart's brands thrive on innovation. To stay ahead, we need to know what consumers crave **before our competitors do**. Flavor Scout scans social chatter to discover the next viral flavor — providing actionable insights that non-technical folks can immediately understand.
 
-### 🧠 Decision Engine
-- AI-curated recommendations split into Selected vs Rejected ideas
-- Each idea includes: Flavor name, Brand fit, Confidence score, and "Why it works" explanation
-- Brand-specific filtering for MuscleBlaze, HK Vitals, or TrueBasics
+---
+
+## ✨ Key Features
+
+### 🔥 Flavor Trend Wall
+- **Interactive flavor tags** showing trending keywords with sentiment colors
+- **Ranking badges** (1st, 2nd, 3rd) for top trending flavors
+- **Click any tag** to see detailed context and mention count
+- **Frequency bar chart** with hover effects
+- **Top Trending Highlight** card featuring the #1 flavor
+
+### 🧠 AI Decision Engine
+- **Selected vs Rejected Ideas** — clear categorization with reasoning
+- **Expandable analysis cards** showing Market Demand, Competitor Gap, and Risk Factors
+- **Existing Product Comparison** — how new flavors compare to current catalog
+- **Promotion Opportunities** — which existing flavors need better marketing
+- **Confidence scores** with color-coded indicators
 
 ### 👑 Golden Candidate
-- Highlights the #1 strongest recommendation
-- Includes market opportunity analysis and supporting insights
-- Clear, actionable insight for product teams
+- **The #1 Strongest Recommendation** highlighted prominently
+- **Market Opportunity Analysis** with competitive advantage
+- **Pain Points Addressed** — number of customer complaints solved
+- **Supporting quotes** from real user discussions
+- **vs Current Products** comparison
+
+### 🔴 Consumer Pain Points Panel
+- **Clickable cards** — click to reveal opportunity suggestions
+- **Frequency visualization** with progress bars
+- **Issue categorization** (sweetness, texture, artificial taste, etc.)
+- **Auto-generated opportunities** based on complaint type
+
+### 🎯 Brand Filtering
+- **Filter by brand** — MuscleBlaze, HK Vitals, TrueBasics, or All
+- **Dynamic recommendations** — Golden Candidate updates based on selection
+- **Brand-specific insights** with color-coded styling
 
 ---
 
 ## 🔑 API Keys Setup (REQUIRED)
 
-This project requires **two API keys** to function:
+This project requires **two free API keys** to function:
 
 ### 1. NewsAPI Key (Free)
 
@@ -47,9 +70,8 @@ This project requires **two API keys** to function:
    - It looks like: `a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6`
    
 4. **Free Tier Limits**
-   - 100 requests per day (plenty for development and demos)
+   - 100 requests per day (plenty for demos)
    - Access to news articles from the past month
-   - Perfect for this project!
 
 ### 2. Groq API Key (Free)
 
@@ -57,8 +79,7 @@ This project requires **two API keys** to function:
    - Go to: https://console.groq.com/keys
    
 2. **Sign Up / Log In**
-   - Create a free account if you don't have one
-   - Google/GitHub sign-in available
+   - Create a free account (Google/GitHub sign-in available)
 
 3. **Create API Key**
    - Click "Create API Key"
@@ -68,7 +89,6 @@ This project requires **two API keys** to function:
 4. **Free Tier Limits**
    - 14,400 requests/day
    - 30 requests/minute
-   - More than enough for this project!
 
 ---
 
@@ -82,39 +102,26 @@ This project requires **two API keys** to function:
 
 ### Installation
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/flavor-scout.git
-   cd flavor-scout
-   ```
+```bash
+# 1. Clone the repository
+git clone https://github.com/yourusername/flavor-scout.git
+cd flavor-scout
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# 2. Install dependencies
+npm install
 
-3. **Create environment file**
-   ```bash
-   # Create .env.local file in the project root
-   touch .env.local
-   ```
+# 3. Create environment file
+touch .env.local
 
-4. **Add your API keys to `.env.local`**
-   ```env
-   # NewsAPI (Required) - Get free key at https://newsapi.org/register
-   NEWS_API_KEY=your_newsapi_key_here
+# 4. Add your API keys to .env.local
+echo "NEWS_API_KEY=your_newsapi_key_here" >> .env.local
+echo "GROQ_API_KEY=gsk_your_groq_api_key_here" >> .env.local
 
-   # Groq API (Required) - Get free key at https://console.groq.com/keys
-   GROQ_API_KEY=gsk_your_groq_api_key_here
-   ```
+# 5. Run the development server
+npm run dev
+```
 
-5. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-6. **Open the dashboard**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+Open [http://localhost:3000](http://localhost:3000) to see the dashboard!
 
 ---
 
@@ -123,22 +130,22 @@ This project requires **two API keys** to function:
 ```
 flavor-scout/
 ├── app/
-│   ├── page.tsx              # Main dashboard
-│   ├── layout.tsx            # Root layout with fonts
-│   ├── globals.css           # Global styles + Tailwind
+│   ├── page.tsx              # Main dashboard with all sections
+│   ├── layout.tsx            # Root layout with fonts (Plus Jakarta Sans)
+│   ├── globals.css           # Global styles + Tailwind + glassmorphism
 │   └── api/
-│       ├── news/route.ts     # News data fetching
-│       └── analyze/route.ts  # Groq AI analysis
+│       ├── news/route.ts     # News data fetching with caching
+│       └── analyze/route.ts  # Groq AI analysis endpoint
 ├── components/
-│   ├── TrendWall.tsx         # Word cloud + frequency chart
-│   ├── DecisionEngine.tsx    # Selected vs Rejected ideas
-│   ├── GoldenCandidate.tsx   # Top recommendation card
-│   ├── BrandSelector.tsx     # Brand filter buttons
-│   └── LoadingState.tsx      # Loading animation
+│   ├── TrendWall.tsx         # Flavor tags + frequency chart
+│   ├── DecisionEngine.tsx    # Selected vs Rejected with expandable analysis
+│   ├── GoldenCandidate.tsx   # Top recommendation hero card
+│   ├── BrandSelector.tsx     # Brand filter with icons & taglines
+│   └── LoadingState.tsx      # Animated loading state
 ├── lib/
-│   ├── types.ts              # TypeScript interfaces
-│   ├── news.ts               # NewsAPI client
-│   └── groq.ts               # Groq AI client + prompts
+│   ├── types.ts              # TypeScript interfaces for all data
+│   ├── news.ts               # NewsAPI client with 10-min caching
+│   └── groq.ts               # Groq AI client + comprehensive prompt
 └── .env.local                # API keys (gitignored)
 ```
 
@@ -148,13 +155,64 @@ flavor-scout/
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| Frontend | Next.js 14 + React | Modern React framework with App Router |
-| Styling | Tailwind CSS | Utility-first CSS with custom glassmorphism |
-| Animations | Framer Motion | Smooth, physics-based animations |
-| Charts | Recharts | Data visualization |
-| AI/LLM | Groq (Llama 3.1 70B) | Fast inference for flavor analysis |
-| Data Source | NewsAPI | News articles about supplements & fitness |
-| Hosting | Vercel | Free deployment with edge functions |
+| **Frontend** | Next.js 14 + React 19 | Modern React with App Router |
+| **Styling** | Tailwind CSS | Utility-first + custom glassmorphism |
+| **Animations** | Framer Motion | Physics-based micro-interactions |
+| **Charts** | Recharts | Data visualization |
+| **Icons** | Lucide React | Professional SVG icons |
+| **AI/LLM** | Groq (Llama 3.3 70B) | Fast inference for flavor analysis |
+| **Data Source** | NewsAPI | Real-time news about supplements |
+| **Fonts** | Plus Jakarta Sans + Inter | Premium typography |
+| **Hosting** | Vercel | Free deployment with edge functions |
+
+---
+
+## 📊 How the AI Works
+
+### 1. Data Ingestion
+The system queries NewsAPI with 15+ targeted search terms:
+- "protein powder flavors India"
+- "MuscleBlaze new flavor review"
+- "whey protein taste India"
+- "HealthKart supplements trending"
+- "supplement industry India 2024"
+- "fitness nutrition flavors"
+- "BCAA electrolyte flavors"
+- Plus competitor terms (ON, MyProtein, Dymatize)
+
+### 2. AI Analysis Pipeline
+```
+News Articles → Content Extraction → Groq LLM Analysis → Structured JSON
+```
+
+The AI prompt includes:
+- **Current HealthKart Product Catalog** — What we already sell
+- **Competitor Flavors** — What ON, MyProtein, Dymatize offer
+- **Missing Gaps** — What flavors are missing from each product
+- **Promotion Opportunities** — Undermarketed existing flavors
+
+### 3. Output Structure
+- **Trending Keywords**: Specific flavor names (not generic terms)
+- **Negative Mentions**: Complaints about current products
+- **6+ Recommendations**: At least 2 per brand
+- **Golden Candidate**: The single best opportunity
+- **Analysis Insights**: Executive summary
+
+### 4. Intelligent Caching
+- NewsAPI responses cached for **10 minutes**
+- "Refresh" button uses cache
+- "Force New" button bypasses cache
+- Reduces API calls and improves UX
+
+---
+
+## 🎯 Brand Profiles
+
+| Brand | Target Audience | Flavor Style | Products |
+|-------|-----------------|--------------|----------|
+| **MuscleBlaze** 🟠 | Hardcore gym enthusiasts | Bold, intense, Indian fusion | Biozyme Whey, BCAA, Pre-Workout |
+| **HK Vitals** 🩵 | Wellness-focused consumers | Light, refreshing, natural | Electrolytes, Multivitamins, Biotin |
+| **TrueBasics** 🟣 | Premium health seekers | Sophisticated, unique | Plant Protein, Marine Collagen |
 
 ---
 
@@ -173,76 +231,39 @@ flavor-scout/
    - Vercel auto-detects Next.js
 
 3. **Add Environment Variables**
-   In Vercel project settings → Environment Variables, add:
-   
    | Variable | Value |
    |----------|-------|
    | `NEWS_API_KEY` | Your NewsAPI key |
    | `GROQ_API_KEY` | Your Groq API key |
 
-4. **Deploy**
-   Click "Deploy" - your app will be live in ~1 minute!
-
----
-
-## 🎯 Brand Profiles
-
-The AI matches flavors to brands based on their positioning:
-
-| Brand | Target Audience | Flavor Style | Color |
-|-------|-----------------|--------------|-------|
-| **MuscleBlaze** | Hardcore gym enthusiasts | Bold, intense | 🟠 Orange |
-| **HK Vitals** | Wellness-focused consumers | Light, refreshing | 🩵 Teal |
-| **TrueBasics** | Premium health seekers | Sophisticated, unique | 🟣 Purple |
-
----
-
-## 📊 How the AI Works
-
-1. **Data Ingestion**: Fetches news articles about supplements, protein, fitness, and Indian health trends
-2. **Content Analysis**: AI analyzes headlines and article content for flavor mentions
-3. **Trend Extraction**: Identifies trending flavor keywords with sentiment analysis
-4. **Recommendation Generation**: Creates actionable suggestions with "Why it works" explanations
-5. **Brand Matching**: Assigns flavors to the most appropriate HealthKart brand
-
-### Search Queries Used:
-- "protein powder flavors India"
-- "MuscleBlaze new flavor"
-- "HealthKart supplements"
-- "whey protein taste review"
-- "supplement trends India"
-- "fitness nutrition India"
+4. **Deploy** — Your app will be live in ~1 minute!
 
 ---
 
 ## 🔧 Troubleshooting
 
-### "NewsAPI key is required"
-- Make sure you've added `NEWS_API_KEY` to `.env.local`
-- Verify the key is correct (no extra spaces)
-- The key should be about 32 characters long
+| Error | Solution |
+|-------|----------|
+| "NewsAPI key is required" | Add `NEWS_API_KEY` to `.env.local` |
+| "Groq API key is required" | Add `GROQ_API_KEY` to `.env.local` (starts with `gsk_`) |
+| "No articles found" | NewsAPI rate limit — wait or check key validity |
+| "Request too large" | Automatic — system truncates input to fit token limits |
+| "Analysis failed" | Refresh page or check browser console |
 
-### "Groq API key is required"
-- Make sure you've added `GROQ_API_KEY` to `.env.local`
-- The key should start with `gsk_`
-- Try generating a new key if the old one doesn't work
+---
 
-### "No articles found"
-- NewsAPI rate limiting - wait a few minutes and try again
-- Free tier allows 100 requests/day
-- Check if your API key is valid
+## 📚 Additional Documentation
 
-### "Analysis failed"
-- This usually means the Groq API had an issue
-- Try refreshing the page
-- Check the browser console for detailed errors
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** — System design and data flow
+- **[TECHNICAL_DOCUMENTATION.md](./TECHNICAL_DOCUMENTATION.md)** — Detailed technical specs
+- **[LOOM_SPEECH.md](./LOOM_SPEECH.md)** — Video walkthrough script
 
 ---
 
 ## 📝 License
 
-MIT License - feel free to use and modify!
+MIT License — feel free to use and modify!
 
 ---
 
-Built with ❤️ for HealthKart by Shrayna Srivastava
+**Built with ❤️ for HealthKart by Shrayna Srivastava**

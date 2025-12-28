@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
 
     // Step 2: Analyze with Groq LLM
     console.log('[Flavor Scout] Analyzing with Groq AI...');
-    const { trendKeywords, recommendations, goldenCandidate } = await analyzeWithGroq(posts, comments);
+    const { trendKeywords, recommendations, goldenCandidate, negativeMentions, analysisInsights } = await analyzeWithGroq(posts, comments);
     console.log(`[Flavor Scout] Generated ${recommendations.length} recommendations`);
 
     // Step 3: Create flavor mentions summary from keywords
@@ -80,8 +80,10 @@ export async function GET(request: NextRequest) {
       flavorMentions,
       recommendations,
       goldenCandidate,
+      negativeMentions,
       rawPostCount: posts.length,
       analyzedAt: new Date().toISOString(),
+      analysisInsights,
       cacheInfo: {
         usedCache,
         cacheAgeSeconds: cacheInfoAfter.ageSeconds,

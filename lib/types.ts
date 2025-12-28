@@ -35,6 +35,24 @@ export interface TrendKeyword {
   text: string;
   value: number;
   sentiment: 'positive' | 'negative' | 'neutral';
+  context?: string; // Brief context about why this is trending
+}
+
+// Detailed analysis for why a flavor was selected
+export interface FlavorAnalysis {
+  marketDemand: string;       // What's driving demand
+  competitorGap: string;      // What competitors are missing
+  consumerPainPoint: string;  // What problem this solves
+  seasonalRelevance?: string; // Seasonal factors
+  riskFactors: string[];      // Potential risks
+}
+
+// Negative mention tracking
+export interface NegativeMention {
+  flavor: string;
+  complaint: string;
+  frequency: number;
+  source: string;
 }
 
 // Brand types
@@ -83,6 +101,10 @@ export interface FlavorRecommendation {
   supportingData: string[];
   status: 'selected' | 'rejected';
   rejectionReason?: string;
+  analysis?: FlavorAnalysis; // Detailed breakdown
+  negativeFeedback?: string[]; // Related negative mentions to address
+  existingComparison?: string; // How this compares to current flavors
+  promotionOpportunity?: string; // If existing flavor needs better marketing
 }
 
 export interface GoldenCandidate {
@@ -90,7 +112,9 @@ export interface GoldenCandidate {
   rank: number;
   totalMentions: number;
   sentimentScore: number;
+  negativeMentions: number; // Track negative sentiment too
   marketGap: string;
+  competitiveAdvantage: string; // Why HealthKart should launch this first
 }
 
 // API Response types
@@ -99,8 +123,10 @@ export interface AnalysisResponse {
   flavorMentions: FlavorMention[];
   recommendations: FlavorRecommendation[];
   goldenCandidate: GoldenCandidate | null;
+  negativeMentions: NegativeMention[]; // Track complaints and issues
   rawPostCount: number;
   analyzedAt: string;
+  analysisInsights?: string; // Overall market summary
 }
 
 export interface NewsFetchResponse {

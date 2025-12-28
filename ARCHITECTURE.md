@@ -1,64 +1,99 @@
 # 🏗️ Flavor Scout - Architecture Guide
 
-This document explains the technical architecture and design decisions for your Loom video presentation.
+This document explains the technical architecture and design decisions for Flavor Scout — the AI-powered flavor trend discovery engine for HealthKart.
 
 ---
 
 ## System Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        FLAVOR SCOUT                              │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│   │   NewsAPI   │───▶│  Next.js    │───▶│    Groq     │        │
-│   │   (Data)    │    │  API Routes │    │   LLM AI    │        │
-│   └─────────────┘    └─────────────┘    └─────────────┘        │
-│         │                   │                   │               │
-│         │                   ▼                   │               │
-│         │           ┌─────────────┐             │               │
-│         └──────────▶│   React     │◀────────────┘               │
-│                     │  Dashboard  │                              │
-│                     └─────────────┘                              │
-│                           │                                      │
-│         ┌─────────────────┼─────────────────┐                   │
-│         ▼                 ▼                 ▼                   │
-│   ┌───────────┐    ┌───────────┐    ┌───────────┐              │
-│   │ TrendWall │    │ Decision  │    │  Golden   │              │
-│   │           │    │  Engine   │    │ Candidate │              │
-│   └───────────┘    └───────────┘    └───────────┘              │
-│                                                                  │
-└─────────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────────┐
+│                            FLAVOR SCOUT                                     │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│   ┌──────────────┐    ┌───────────────┐    ┌───────────────┐              │
+│   │   NewsAPI    │───▶│   Next.js     │───▶│    Groq AI    │              │
+│   │  (15+ Queries)│   │  API Routes   │    │ Llama 3.3 70B │              │
+│   │              │    │  with Cache   │    │               │              │
+│   └──────────────┘    └───────────────┘    └───────────────┘              │
+│          │                    │                     │                      │
+│          │                    ▼                     │                      │
+│          │            ┌───────────────┐             │                      │
+│          └───────────▶│    React      │◀────────────┘                      │
+│                       │   Dashboard   │                                     │
+│                       │ (Framer Motion)│                                    │
+│                       └───────────────┘                                     │
+│                              │                                              │
+│         ┌────────────────────┼────────────────────┐                        │
+│         ▼                    ▼                    ▼                        │
+│   ┌───────────┐       ┌───────────┐       ┌───────────┐                   │
+│   │  Flavor   │       │  Decision │       │  Golden   │                   │
+│   │ Trend Wall│       │   Engine  │       │ Candidate │                   │
+│   │           │       │           │       │           │                   │
+│   │ • Tags    │       │ • Selected│       │ • Hero    │                   │
+│   │ • Chart   │       │ • Rejected│       │ • Stats   │                   │
+│   │ • Top #1  │       │ • Analysis│       │ • Quotes  │                   │
+│   └───────────┘       └───────────┘       └───────────┘                   │
+│                              │                                              │
+│                              ▼                                              │
+│                       ┌───────────┐                                        │
+│                       │Pain Points│                                        │
+│                       │   Panel   │                                        │
+│                       │           │                                        │
+│                       │ • Clickable│                                       │
+│                       │ • Opps    │                                        │
+│                       └───────────┘                                        │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## Data Flow
+## Data Flow Pipeline
 
 ### 1. Data Ingestion (The "Ears")
 ```
-User clicks "Refresh"
+User clicks "Refresh" / "Force New"
         │
         ▼
 /api/analyze (Next.js API Route)
+        │
+        ├──▶ Check Cache (10-minute TTL)
+        │         │
+        │         ├── Cache Hit → Return cached data
+        │         └── Cache Miss / Force → Continue
         │
         ▼
 fetchNewsArticles() from lib/news.ts
         │
         ▼
-Call NewsAPI with search queries:
-  - "protein powder flavors India"
-  - "MuscleBlaze new flavor"
-  - "HealthKart supplements"
-  - "whey protein taste review"
-  - "supplement trends India"
+Call NewsAPI with 15+ search queries:
+  ┌─────────────────────────────────────────┐
+  │ • "protein powder flavors India"         │
+  │ • "MuscleBlaze new flavor review"        │
+  │ • "whey protein taste India"             │
+  │ • "HealthKart supplements trending"      │
+  │ • "supplement industry India 2024"       │
+  │ • "fitness nutrition flavors"            │
+  │ • "BCAA electrolyte flavors"             │
+  │ • "plant protein vegan India"            │
+  │ • "gym supplements India review"         │
+  │ • "wellness nutrition trends"            │
+  │ • "Optimum Nutrition India" (competitor) │
+  │ • "MyProtein flavors" (competitor)       │
+  │ • "Indian traditional flavors health"    │
+  │ • "kesar pista almond supplements"       │
+  │ • "mango guava tropical health"          │
+  └─────────────────────────────────────────┘
         │
         ▼
-Fetch articles + content
+Fetch 100-150 articles + extract content
         │
         ▼
-Return news data for analysis
+Cache results for 10 minutes
+        │
+        ▼
+Return to analysis pipeline
 ```
 
 ### 2. AI Analysis (The "Brain")
@@ -68,26 +103,68 @@ Articles + Content from NewsAPI
         ▼
 analyzeWithGroq() from lib/groq.ts
         │
-        ▼
-Structured Prompt to Llama 3.1 70B:
-┌─────────────────────────────────────────┐
-│ "You are a product analyst for         │
-│  HealthKart. Analyze these news        │
-│  articles and extract:                  │
-│  1. Trending flavor keywords            │
-│  2. Recommendations with 'Why it works' │
-│  3. The #1 Golden Candidate            │
-│                                         │
-│  ONLY use data actually present.       │
-│  Do NOT hallucinate or invent trends.  │
-└─────────────────────────────────────────┘
+        ├──▶ Token Limiting:
+        │    • Top 40 articles by relevance
+        │    • 30 content excerpts
+        │    • Truncate to 25,000 chars max
         │
         ▼
-JSON Response with:
-- trendKeywords[]
-- recommendations[]
-- goldenCandidate
-- dataQuality metrics
+Comprehensive Prompt to Groq Llama 3.3 70B:
+┌─────────────────────────────────────────────────────────────────┐
+│ SYSTEM CONTEXT:                                                  │
+│ "You are a senior product analyst at HealthKart..."             │
+│                                                                  │
+│ CURRENT PRODUCT CATALOG:                                        │
+│ • MuscleBlaze: Biozyme Whey (Rich Chocolate, Kulfi, etc.)       │
+│ • HK Vitals: Electrolytes (Orange, Lemon, Watermelon)           │
+│ • TrueBasics: Plant Protein (Chocolate, Vanilla, Coffee)        │
+│                                                                  │
+│ COMPETITORS TO WATCH:                                            │
+│ • Optimum Nutrition (Kaju Katli, Rasmalai)                       │
+│ • MyProtein (Salted Caramel, Tiramisu)                          │
+│ • Dymatize (Birthday Cake, Fruity Pebbles)                       │
+│                                                                  │
+│ REQUIREMENTS:                                                    │
+│ 1. Extract SPECIFIC FLAVOR NAMES (not generic terms)            │
+│ 2. Track complaints about current products                       │
+│ 3. Generate 6+ recommendations (2+ per brand)                    │
+│ 4. Identify the Golden Candidate                                 │
+│ 5. Include detailed analysis for each recommendation             │
+│                                                                  │
+│ ANTI-HALLUCINATION RULES:                                        │
+│ • ONLY extract insights from actual article content              │
+│ • Base recommendations on real data                              │
+│ • Include supporting quotes                                      │
+└─────────────────────────────────────────────────────────────────┘
+        │
+        ├──▶ Settings:
+        │    • model: "llama-3.3-70b-versatile"
+        │    • temperature: 0.4 (factual, not creative)
+        │    • response_format: { type: "json_object" }
+        │
+        ▼
+JSON Response:
+┌─────────────────────────────────────────────────────────────────┐
+│ {                                                                │
+│   "analysisInsights": "Executive summary...",                    │
+│   "trendKeywords": [                                             │
+│     { "text": "Mango Lassi", "value": 25, "sentiment": "+" }    │
+│   ],                                                             │
+│   "negativeMentions": [                                          │
+│     { "flavor": "Rich Chocolate", "complaint": "Too sweet" }     │
+│   ],                                                             │
+│   "recommendations": [                                           │
+│     {                                                            │
+│       "flavorName": "Kesar Pista",                              │
+│       "targetBrand": "MuscleBlaze",                             │
+│       "confidence": 87,                                          │
+│       "whyItWorks": "...",                                       │
+│       "analysis": { "marketDemand": "...", ... }                 │
+│     }                                                            │
+│   ],                                                             │
+│   "goldenCandidate": { ... }                                     │
+│ }                                                                │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ### 3. Dashboard Rendering (The "Face")
@@ -97,52 +174,93 @@ AnalysisResponse from API
         ▼
 React Dashboard (app/page.tsx)
         │
+        ├──▶ Header
+        │    • Flavor Scout logo with animation
+        │    • Brand selector (All, MuscleBlaze, HK Vitals, TrueBasics)
+        │    • Refresh / Force New buttons
+        │    • Cache indicator
+        │
+        ├──▶ Stats Bar
+        │    • Articles Analyzed
+        │    • Trending Keywords
+        │    • Selected Ideas
+        │    • Pain Points Found
+        │    • Last Updated
+        │
+        ├──▶ AI Market Analysis Summary
+        │    • Executive insights from LLM
+        │
+        ├──▶ GoldenCandidate.tsx
+        │    • Hero card with #1 recommendation
+        │    • 4 stat boxes (Confidence, Mentions, Pain Points, Positive %)
+        │    • Why This Works
+        │    • Market Opportunity
+        │    • Competitive Advantage
+        │    • vs Current Products
+        │
         ├──▶ TrendWall.tsx
-        │         │
-        │         ├── Word Cloud (keyword bubbles)
-        │         └── Bar Chart (frequency visualization)
+        │    • Top Trending Flavor highlight card
+        │    • Interactive flavor tags with rankings (1st, 2nd, 3rd)
+        │    • Clickable tags with sentiment colors
+        │    • Frequency bar chart
+        │    • Legend (Positive/Negative/Neutral)
         │
-        ├──▶ DecisionEngine.tsx
-        │         │
-        │         ├── Selected Ideas (green)
-        │         └── Rejected Ideas (red)
+        ├──▶ Pain Points Panel
+        │    • Clickable complaint cards
+        │    • Click to reveal opportunity
+        │    • Frequency visualization
         │
-        └──▶ GoldenCandidate.tsx
-                  │
-                  └── Hero card with #1 recommendation
+        └──▶ DecisionEngine.tsx
+             • Selected Ideas (green, expandable)
+             • Rejected Ideas (red, with reasons)
+             • Each card shows:
+               - Flavor name + confidence
+               - Why It Works
+               - vs Current Products
+               - Promotion Opportunity
+               - Expandable Analysis (Market Demand, Competitor Gap, etc.)
 ```
 
 ---
 
-## How the AI Makes Decisions (Avoiding Hallucinations)
+## How the AI Avoids Hallucinations
 
 ### 1. Grounded in Real Data
-- The AI ONLY analyzes actual news articles
+- The AI ONLY analyzes actual news articles from NewsAPI
 - No synthetic or mock data is used
 - Every recommendation is traceable to real industry content
 
 ### 2. Structured Output with Validation
 ```javascript
-// We use JSON mode to ensure parseable, structured output
+// JSON mode ensures parseable, structured output
 response_format: { type: 'json_object' }
 
 // Lower temperature for factual, consistent outputs
-temperature: 0.4  // (not 0.7 or higher which causes creativity/hallucination)
+temperature: 0.4  // (not 0.7+ which causes creativity/hallucination)
 ```
 
-### 3. Explicit Instructions to Prevent Hallucination
-The prompt includes:
+### 3. Explicit Anti-Hallucination Rules in Prompt
 ```
-"ONLY extract insights that are ACTUALLY present in the data"
-"Do NOT invent or hallucinate flavor requests"
-"Base recommendations on actual article content"
+✅ "ONLY extract insights that are ACTUALLY present in the data"
+✅ "Do NOT invent or hallucinate flavor requests"
+✅ "Base recommendations on actual article content"
+✅ "Trending keywords MUST be SPECIFIC FLAVOR NAMES"
+   • Good: "Mango Lassi", "Kesar Pista", "Dark Chocolate"
+   • Bad: "plant-based", "protein-rich", "clean label"
 ```
 
 ### 4. Supporting Evidence Required
 Every recommendation must include:
-- `supportingData`: Actual quotes or paraphrased insights from the data
-- `whyItWorks`: Plain business language explanation grounded in articles
-- `confidence`: Score based on volume and sentiment of real content
+- `supportingData`: Actual quotes from articles
+- `whyItWorks`: Business explanation grounded in data
+- `analysis`: Detailed breakdown (market demand, competitor gap, etc.)
+- `confidence`: Score based on mention volume and sentiment
+
+### 5. Token Limiting to Reduce Noise
+- Only top 40 articles analyzed (by relevance score)
+- Content truncated to 150 chars per article
+- Total input capped at 25,000 characters
+- Reduces irrelevant content that could confuse the model
 
 ---
 
@@ -150,179 +268,215 @@ Every recommendation must include:
 
 ### Why This Layout?
 
-1. **Stats Bar at Top**: Immediate context showing data source metrics
-2. **Golden Candidate First**: Most important insight above the fold
-3. **Trend Wall Middle**: Visual discovery of trending keywords
-4. **Decision Engine Last**: Detailed analysis for deep dives
+| Section | Position | Reason |
+|---------|----------|--------|
+| **Stats Bar** | Top | Immediate context about data quality |
+| **AI Summary** | After stats | Executive overview before details |
+| **Golden Candidate** | Above fold | Most important insight first |
+| **Trend Wall** | Middle | Visual discovery of trending flavors |
+| **Pain Points** | Below trends | Problems = opportunities |
+| **Decision Engine** | Bottom | Detailed analysis for deep dives |
 
 ### Why Dark Mode?
-
-- **Fitness Vibe**: Matches MuscleBlaze's hardcore aesthetic
+- **Fitness Aesthetic**: Matches MuscleBlaze's hardcore brand
 - **Eye Comfort**: Reduces strain during extended analysis
 - **Premium Feel**: Aligns with TrueBasics positioning
 - **Better Contrast**: Data visualizations pop more
+- **Modern Look**: Expected by tech-savvy audience
 
 ### Glassmorphism Design
-
-We use glassmorphism (frosted glass effect) because:
 - Creates depth without heavy borders
 - Modern, premium appearance
-- Works well with the brand colors
+- Works well with brand color overlays
 - Allows background gradients to show through
 
 ### Color System
 
-| Color | Usage |
-|-------|-------|
-| 🟢 Emerald | Positive sentiment, selected ideas |
-| 🔴 Red | Negative sentiment, rejected ideas |
-| 🟡 Gold/Yellow | Golden candidate, top recommendation |
-| 🟣 Purple | Interactive elements, primary actions |
-| 🟠 Orange | MuscleBlaze brand |
-| 🩵 Teal | HK Vitals brand |
-| 🟣 Purple | TrueBasics brand |
+| Color | Hex | Usage |
+|-------|-----|-------|
+| 🟢 Emerald | `#10B981` | Positive sentiment, selected ideas |
+| 🔴 Red | `#EF4444` | Negative sentiment, rejected ideas |
+| 🟡 Yellow/Gold | `#F59E0B` | Golden candidate, highlights |
+| 🟣 Purple | `#8B5CF6` | Interactive elements, stats |
+| 🟠 Orange | `#FF6B35` | MuscleBlaze brand |
+| 🩵 Teal | `#4ECDC4` | HK Vitals brand |
+| 💜 Purple | `#7C3AED` | TrueBasics brand |
+
+### Typography
+
+| Font | Usage |
+|------|-------|
+| **Plus Jakarta Sans** | Headings, brand text |
+| **Inter** | Body text, descriptions |
+| **JetBrains Mono** | Numbers, stats, data |
 
 ---
 
 ## API Endpoints
 
 ### GET /api/analyze
-Main endpoint that orchestrates the entire flow:
-1. Validates API credentials
-2. Fetches news articles
-3. Runs Groq AI analysis
-4. Returns combined response
+Main orchestration endpoint:
+
+**Query Parameters:**
+- `refresh=true`: Force fetch new data (bypass cache)
 
 **Response:**
 ```json
 {
-  "trendKeywords": [...],
+  "trendKeywords": [
+    { "text": "Mango Lassi", "value": 25, "sentiment": "positive", "context": "..." }
+  ],
   "flavorMentions": [...],
-  "recommendations": [...],
-  "goldenCandidate": {...},
-  "rawPostCount": 45,
-  "analyzedAt": "2024-01-15T10:30:00Z"
+  "recommendations": [
+    {
+      "id": "rec-1",
+      "flavorName": "Kesar Pista",
+      "productType": "Biozyme Whey",
+      "targetBrand": "MuscleBlaze",
+      "confidence": 87,
+      "whyItWorks": "...",
+      "status": "selected",
+      "analysis": {
+        "marketDemand": "...",
+        "competitorGap": "...",
+        "consumerPainPoint": "...",
+        "riskFactors": [...]
+      }
+    }
+  ],
+  "goldenCandidate": {
+    "recommendation": {...},
+    "totalMentions": 45,
+    "sentimentScore": 0.85,
+    "negativeMentions": 12,
+    "marketGap": "...",
+    "competitiveAdvantage": "..."
+  },
+  "negativeMentions": [
+    { "flavor": "Rich Chocolate", "complaint": "Too sweet", "frequency": 8 }
+  ],
+  "rawPostCount": 137,
+  "analyzedAt": "2024-12-28T10:30:00Z",
+  "analysisInsights": "Executive summary...",
+  "cacheInfo": {
+    "usedCache": true,
+    "cacheAgeSeconds": 180,
+    "totalApiFetches": 3
+  }
 }
 ```
 
 ### GET /api/news
-Raw news data endpoint (for debugging):
+Raw news data endpoint (debugging):
 ```json
 {
   "articles": [...],
   "contentExcerpts": [...],
-  "sources": [...],
-  "fetchedAt": "..."
+  "sources": [...]
 }
 ```
+
+---
+
+## Caching Strategy
+
+### In-Memory Cache (lib/news.ts)
+```javascript
+const newsCache = {
+  data: null,
+  timestamp: 0
+};
+const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+```
+
+### Cache Behavior:
+1. **Refresh Button**: Uses cache if available
+2. **Force New Button**: Bypasses cache completely
+3. **Cache Age**: Displayed in header (e.g., "Cached (3m ago)")
+4. **Auto-Expire**: After 10 minutes, fresh data is fetched
+
+### Why This Strategy?
+- NewsAPI free tier: 100 requests/day
+- Groq free tier: 14,400 requests/day
+- 10-minute cache balances freshness vs. API usage
+- User can force refresh when needed
 
 ---
 
 ## Error Handling
 
-The app handles these scenarios gracefully:
-
-1. **Missing Credentials**: Clear message showing which env vars are missing
-2. **NewsAPI Auth Failure**: Helpful troubleshooting guidance
-3. **Groq API Error**: Retry option with error details
-4. **No Articles Found**: Message suggesting to wait and retry
-5. **Rate Limiting**: Graceful degradation with caching headers
-
----
-
-## NewsAPI Setup
-
-### Getting Your Free API Key
-
-1. Visit https://newsapi.org/register
-2. Sign up with email or Google
-3. Copy your API key from the dashboard
-4. Add to `.env.local`:
-   ```
-   NEWS_API_KEY=your_key_here
-   ```
-
-### Free Tier Limits
-- 100 requests per day
-- Articles from past month
-- Perfect for development and demos
-
-### Search Queries Used
-The app searches for relevant content using these queries:
-- "protein powder flavors India"
-- "MuscleBlaze new flavor"
-- "HealthKart supplements"
-- "whey protein taste review India"
-- "supplement trends India"
-- "fitness nutrition India"
+| Scenario | Handling |
+|----------|----------|
+| Missing `NEWS_API_KEY` | Clear error with setup link |
+| Missing `GROQ_API_KEY` | Clear error with setup link |
+| NewsAPI auth failure | Troubleshooting guidance |
+| NewsAPI rate limit | Suggest waiting, show cache |
+| Groq token limit | Auto-truncate input |
+| Groq API error | Retry button, error details |
+| No articles found | Suggest different search |
+| Network error | Retry button |
 
 ---
 
-## Technology Choices
+## Performance Optimizations
 
-### Why Next.js?
-- Single deployment (frontend + API routes)
-- Free hosting on Vercel
-- Built-in TypeScript support
-- App Router for modern React patterns
-- Edge functions for fast API responses
-
-### Why Groq?
-- Fastest LLM inference available (~100 tokens/sec)
-- Free tier with generous limits
-- Llama 3.1 70B excels at analysis tasks
-- JSON mode for structured outputs
-
-### Why NewsAPI?
-- Free tier with 100 requests/day
-- Searches news from multiple sources
-- Articles about supplements, fitness, health
-- Simple API key authentication
-- Returns headlines, descriptions, and content
+1. **Token Limiting**: Caps Groq input at 25,000 chars
+2. **Article Limiting**: Only top 40 articles sent to LLM
+3. **Caching**: 10-minute NewsAPI cache
+4. **Lazy Loading**: Components render progressively
+5. **Animations**: GPU-accelerated via Framer Motion
+6. **Image-Free**: No heavy image assets
 
 ---
 
-## Demo Script for Loom Video (5 mins)
+## Security Considerations
 
-### 1. Intro (30 seconds)
-"This is Flavor Scout - an AI-powered tool that discovers viral flavor trends from news articles and industry content for HealthKart's brands."
+1. **API Keys**: Server-side only, never exposed to client
+2. **Environment Variables**: Stored in `.env.local` (gitignored)
+3. **Rate Limiting**: Built-in via API provider limits
+4. **Input Validation**: All API inputs sanitized
+5. **CORS**: Default Next.js configuration
 
-### 2. Live Dashboard Demo (1.5 minutes)
-- Show the Golden Candidate card
-- Explain the confidence score and market opportunity
-- Demonstrate the Trend Wall word cloud
-- Click through brand filters
+---
 
-### 3. How AI Avoids Hallucinations (1 minute)
-- Show actual news articles being analyzed
-- Explain how insights are extracted
-- Demonstrate the supporting data
-- Mention temperature settings and JSON mode
+## Deployment Architecture
 
-### 4. Decision Engine Walkthrough (1 minute)
-- Show selected vs rejected ideas
-- Explain why ideas get rejected
-- Read a "Why it works" explanation
-
-### 5. Technical Overview (30 seconds)
-- Quick architecture diagram
-- Mention NewsAPI and Groq
-- Show the Vercel deployment
-
-### 6. Closing (30 seconds)
-"This tool gives product teams real industry insights to make data-driven flavor decisions. No guessing - just real news content analyzed by AI."
+```
+┌─────────────────────────────────────────┐
+│              Vercel Edge                 │
+├─────────────────────────────────────────┤
+│                                          │
+│   ┌─────────────┐    ┌─────────────┐    │
+│   │  Next.js    │    │  API Routes │    │
+│   │  Frontend   │────│  (Serverless)│   │
+│   │  (Static)   │    │             │    │
+│   └─────────────┘    └─────────────┘    │
+│                             │            │
+│                             ▼            │
+│                    ┌─────────────┐       │
+│                    │ Environment │       │
+│                    │  Variables  │       │
+│                    │ NEWS_API_KEY│       │
+│                    │ GROQ_API_KEY│       │
+│                    └─────────────┘       │
+│                                          │
+└─────────────────────────────────────────┘
+```
 
 ---
 
 ## Future Enhancements
 
-1. **More Data Sources**: Twitter/X, Instagram, Amazon reviews
-2. **Historical Trends**: Track flavor mentions over time
-3. **Export Reports**: PDF/Excel for stakeholders
-4. **Slack Integration**: Alert team on new trends
-5. **A/B Testing Tracker**: Compare recommended vs launched
-6. **Competitor Analysis**: Track competitor flavor releases
+| Feature | Priority | Description |
+|---------|----------|-------------|
+| **More Data Sources** | High | Twitter/X, Instagram, Amazon reviews |
+| **Historical Trends** | High | Track flavor mentions over time |
+| **Export Reports** | Medium | PDF/Excel for stakeholders |
+| **Slack Integration** | Medium | Alert team on new trends |
+| **A/B Testing Tracker** | Low | Compare recommended vs launched |
+| **Competitor Dashboard** | Low | Dedicated competitor analysis |
+| **Multi-Language** | Low | Hindi content analysis |
 
 ---
 
-Built with ❤️ for HealthKart by Shrayna Srivastava
+**Built with ❤️ for HealthKart by Shrayna Srivastava**
