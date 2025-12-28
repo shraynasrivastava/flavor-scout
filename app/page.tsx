@@ -18,7 +18,9 @@ import {
   ThumbsDown,
   Package,
   ChevronDown,
-  Lightbulb
+  Lightbulb,
+  AlertCircle,
+  WifiOff
 } from 'lucide-react';
 import TrendWall from '@/components/TrendWall';
 import DecisionEngine from '@/components/DecisionEngine';
@@ -38,6 +40,8 @@ interface CacheInfo {
   usedCache: boolean;
   cacheAgeSeconds: number;
   totalApiFetches: number;
+  isFallback?: boolean;
+  fallbackReason?: string;
 }
 
 export default function Dashboard() {
@@ -185,11 +189,23 @@ export default function Dashboard() {
               <div className="flex items-center gap-2">
                 {/* Cache indicator */}
                 {cacheInfo && !loading && (
-                  <span className="text-xs text-slate-500 hidden sm:block flex items-center gap-1">
-                    <Package className="w-3 h-3" />
-                    {cacheInfo.usedCache 
-                      ? `Cached (${Math.floor(cacheInfo.cacheAgeSeconds / 60)}m ago)`
-                      : 'Fresh data'
+                  <span className={`text-xs hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-lg ${
+                    cacheInfo.isFallback 
+                      ? 'text-amber-400 bg-amber-500/10 border border-amber-500/20' 
+                      : cacheInfo.usedCache 
+                        ? 'text-slate-400 bg-slate-700/30' 
+                        : 'text-emerald-400 bg-emerald-500/10'
+                  }`}>
+                    {cacheInfo.isFallback ? (
+                      <AlertCircle className="w-3 h-3" />
+                    ) : (
+                      <Package className="w-3 h-3" />
+                    )}
+                    {cacheInfo.isFallback 
+                      ? `Fallback (${Math.floor(cacheInfo.cacheAgeSeconds / 60)}m ago)`
+                      : cacheInfo.usedCache 
+                        ? `Cached (${Math.floor(cacheInfo.cacheAgeSeconds / 60)}m ago)`
+                        : 'Fresh data'
                     }
                   </span>
                 )}
@@ -223,6 +239,46 @@ export default function Dashboard() {
           </div>
         </div>
       </header>
+
+      {/* Fallback Data Banner */}
+      <AnimatePresence>
+        {cacheInfo?.isFallback && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: 'auto' }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+            className="bg-gradient-to-r from-amber-500/20 via-orange-500/15 to-amber-500/20 border-b border-amber-500/30"
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-amber-500/20 border border-amber-500/30">
+                    <WifiOff className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-amber-300 font-medium text-sm">
+                      Showing Cached Data
+                    </p>
+                    <p className="text-amber-400/70 text-xs">
+                      {cacheInfo.fallbackReason || 'API temporarily unavailable'} • 
+                      Data from {Math.floor(cacheInfo.cacheAgeSeconds / 60)}m {cacheInfo.cacheAgeSeconds % 60}s ago
+                    </p>
+                  </div>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => fetchAnalysis(true)}
+                  className="px-4 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-xs font-medium flex items-center gap-2 transition-colors"
+                >
+                  <RefreshCw className="w-3 h-3" />
+                  Retry
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10 relative z-10">
