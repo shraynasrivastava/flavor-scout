@@ -152,8 +152,11 @@ export default function TrendWall({ keywords }: TrendWallProps) {
                     color: getSentimentColor(keyword.sentiment),
                     background: `linear-gradient(135deg, ${getSentimentColor(keyword.sentiment)}15, ${getSentimentColor(keyword.sentiment)}08)`,
                     borderColor: `${getSentimentColor(keyword.sentiment)}50`,
-                    ringColor: getSentimentColor(keyword.sentiment),
-                    boxShadow: isTop3 ? `0 8px 32px -8px ${getSentimentColor(keyword.sentiment)}40` : undefined
+                    boxShadow: isTop3 
+                      ? `0 8px 32px -8px ${getSentimentColor(keyword.sentiment)}40` 
+                      : isSelected 
+                        ? `0 0 0 4px ${getSentimentColor(keyword.sentiment)}40, 0 0 0 8px rgba(15, 23, 42, 1)` 
+                        : undefined
                   }}
                 >
                   {isTop3 && (
@@ -253,8 +256,10 @@ export default function TrendWall({ keywords }: TrendWallProps) {
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 10, bottom: 5 }}
                 onMouseMove={(e) => {
-                  if (e?.activePayload?.[0]) {
-                    setHoveredBar(e.activePayload[0].payload.text);
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const payload = (e as any)?.activePayload?.[0];
+                  if (payload?.payload?.text) {
+                    setHoveredBar(payload.payload.text);
                   }
                 }}
                 onMouseLeave={() => setHoveredBar(null)}
