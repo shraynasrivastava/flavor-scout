@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import TrendWall from '@/components/TrendWall';
 import DecisionEngine from '@/components/DecisionEngine';
 import GoldenCandidate from '@/components/GoldenCandidate';
@@ -9,30 +9,46 @@ import BrandSelector from '@/components/BrandSelector';
 import LoadingState from '@/components/LoadingState';
 import { AnalysisResponse, Brand, FlavorRecommendation } from '@/lib/types';
 
+interface ApiError {
+  error: string;
+  message: string;
+  hint?: string;
+  missingVars?: string[];
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<AnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<ApiError | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<Brand | 'all'>('all');
 
-  useEffect(() => {
-    fetchAnalysis();
-  }, []);
-
-  const fetchAnalysis = async () => {
+  const fetchAnalysis = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const response = await fetch('/api/analyze');
-      if (!response.ok) throw new Error('Failed to fetch analysis');
       const result = await response.json();
+      
+      if (!response.ok) {
+        setError(result as ApiError);
+        return;
+      }
+      
       setData(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError({
+        error: 'Network Error',
+        message: err instanceof Error ? err.message : 'Failed to connect to server',
+        hint: 'Please check your internet connection and try again.'
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchAnalysis();
+  }, [fetchAnalysis]);
 
   // Filter recommendations by brand
   const filteredRecommendations: FlavorRecommendation[] = data?.recommendations 
@@ -45,189 +61,338 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900/20 to-slate-900 flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="noise-overlay" />
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-red-900/20 border border-red-500/30 rounded-2xl p-8 max-w-md text-center"
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          className="glass-card rounded-2xl p-8 max-w-lg text-center relative overflow-hidden"
         >
-          <span className="text-5xl mb-4 block">😕</span>
-          <h2 className="text-xl font-semibold text-red-400 mb-2">Oops! Something went wrong</h2>
-          <p className="text-slate-400 mb-4">{error}</p>
-          <button
-            onClick={fetchAnalysis}
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors"
-          >
-            Try Again
-          </button>
+          <div className="absolute inset-0 bg-gradient-to-br from-red-500/10 to-transparent" />
+          <div className="relative z-10">
+            <motion.span 
+              className="text-6xl block mb-6"
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            >
+              ⚠️
+            </motion.span>
+            <h2 className="text-2xl font-bold text-white mb-2">{error.error}</h2>
+            <p className="text-slate-300 mb-4">{error.message}</p>
+            
+            {error.missingVars && error.missingVars.length > 0 && (
+              <div className="bg-slate-800/50 rounded-lg p-4 mb-4 text-left">
+                <p className="text-sm text-slate-400 mb-2">Missing environment variables:</p>
+                <div className="flex flex-wrap gap-2">
+                  {error.missingVars.map(v => (
+                    <code key={v} className="px-2 py-1 bg-red-900/30 text-red-400 rounded text-xs">
+                      {v}
+                    </code>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {error.hint && (
+              <p className="text-sm text-slate-500 mb-6">💡 {error.hint}</p>
+            )}
+            
+            <button
+              onClick={fetchAnalysis}
+              className="btn-primary px-8 py-3 rounded-xl text-white font-medium"
+            >
+              Try Again
+            </button>
+          </div>
         </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      <div className="noise-overlay" />
+      
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <motion.span 
-                className="text-4xl"
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+      <header className="sticky top-0 z-50 glass-card border-b border-slate-800/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            {/* Logo & Title */}
+            <div className="flex items-center gap-4">
+              <motion.div 
+                className="relative"
+                animate={{ rotate: [0, 5, -5, 0] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
               >
-                🍦
-              </motion.span>
+                <span className="text-5xl">🍦</span>
+                <motion.div
+                  className="absolute -top-1 -right-1 text-lg"
+                  animate={{ scale: [1, 1.2, 1], opacity: [1, 0.8, 1] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  ✨
+                </motion.div>
+              </motion.div>
               <div>
-                <h1 className="text-2xl font-bold text-white">Flavor Scout</h1>
-                <p className="text-sm text-slate-400">AI-Powered Flavor Trend Discovery</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  Flavor Scout
+                </h1>
+                <p className="text-sm text-slate-400 hidden sm:block">
+                  AI-Powered Flavor Trend Discovery for{' '}
+                  <span className="text-gradient-brand font-medium">HealthKart</span>
+                </p>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
+            {/* Controls */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <BrandSelector selected={selectedBrand} onSelect={setSelectedBrand} />
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={fetchAnalysis}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium"
+                className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-medium"
               >
-                <span>🔄</span> Refresh
-              </button>
+                <motion.span
+                  animate={{ rotate: loading ? 360 : 0 }}
+                  transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
+                >
+                  🔄
+                </motion.span>
+                Refresh Analysis
+              </motion.button>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10 relative z-10">
         {/* Stats Bar */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4"
         >
           <StatCard 
             icon="📊" 
             value={data?.rawPostCount || 0} 
-            label="Posts Analyzed" 
+            label="Reddit Posts Analyzed" 
             color="purple"
+            delay={0}
           />
           <StatCard 
             icon="🔥" 
             value={data?.trendKeywords.length || 0} 
             label="Trending Keywords" 
             color="orange"
+            delay={0.1}
           />
           <StatCard 
             icon="✅" 
             value={data?.recommendations.filter(r => r.status === 'selected').length || 0} 
             label="Selected Ideas" 
             color="emerald"
+            delay={0.2}
           />
           <StatCard 
-            icon="⏱️" 
-            value={data?.analyzedAt ? new Date(data.analyzedAt).toLocaleTimeString() : '-'} 
+            icon="🕐" 
+            value={data?.analyzedAt ? formatTime(data.analyzedAt) : '-'} 
             label="Last Updated" 
             color="cyan"
+            delay={0.3}
           />
         </motion.div>
 
         {/* Golden Candidate - Hero Section */}
-        {data?.goldenCandidate && (
-          <section>
-            <SectionHeader 
-              icon="👑" 
-              title="Top Recommendation" 
-              subtitle="The #1 flavor opportunity based on AI analysis"
-            />
-            <GoldenCandidate candidate={data.goldenCandidate} />
-          </section>
-        )}
+        <AnimatePresence>
+          {data?.goldenCandidate && (
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <SectionHeader 
+                icon="👑" 
+                title="Golden Recommendation" 
+                subtitle="The #1 flavor opportunity based on AI analysis of real social discussions"
+                highlight
+              />
+              <GoldenCandidate candidate={data.goldenCandidate} />
+            </motion.section>
+          )}
+        </AnimatePresence>
 
         {/* Trend Wall */}
         {data?.trendKeywords && data.trendKeywords.length > 0 && (
-          <section>
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+          >
             <SectionHeader 
               icon="📈" 
               title="Trend Wall" 
-              subtitle="What consumers are talking about right now"
+              subtitle="Real-time flavor keywords from Reddit discussions"
             />
             <TrendWall keywords={data.trendKeywords} />
-          </section>
+          </motion.section>
         )}
 
         {/* Decision Engine */}
         {filteredRecommendations.length > 0 && (
-          <section>
+          <motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+          >
             <SectionHeader 
               icon="🧠" 
-              title="All Recommendations" 
+              title="AI Decision Engine" 
               subtitle={selectedBrand === 'all' 
-                ? "AI-curated flavor ideas for all brands" 
-                : `Flavor ideas for ${selectedBrand}`}
+                ? "All AI-curated flavor recommendations with reasoning" 
+                : `Flavor opportunities for ${selectedBrand}`}
             />
             <DecisionEngine recommendations={filteredRecommendations} />
-          </section>
+          </motion.section>
         )}
 
         {/* Footer */}
-        <footer className="pt-8 border-t border-slate-800 text-center text-slate-500 text-sm">
-          <p>Built for HealthKart • Powered by Groq AI + Reddit Data</p>
-          <p className="mt-1">
-            Brands: 
-            <span className="text-[#FF6B35] mx-2">MuscleBlaze</span>•
-            <span className="text-[#4ECDC4] mx-2">HK Vitals</span>•
-            <span className="text-[#9B59B6] mx-2">TrueBasics</span>
+        <motion.footer 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="pt-12 pb-6 border-t border-slate-800/50 text-center"
+        >
+          <div className="flex justify-center items-center gap-2 mb-4">
+            <span className="text-2xl">🍦</span>
+            <span className="text-slate-400 text-sm">Flavor Scout</span>
+          </div>
+          <p className="text-slate-500 text-sm mb-2">
+            Powered by <span className="text-purple-400">Groq AI</span> + <span className="text-orange-400">Reddit Data</span>
           </p>
-        </footer>
+          <div className="flex justify-center items-center gap-4 text-sm">
+            <span className="text-[#FF6B35]">● MuscleBlaze</span>
+            <span className="text-[#4ECDC4]">● HK Vitals</span>
+            <span className="text-[#9B59B6]">● TrueBasics</span>
+          </div>
+          <p className="text-slate-600 text-xs mt-4">
+            Built with ❤️ for HealthKart by Shrayna Srivastava
+          </p>
+        </motion.footer>
       </main>
     </div>
   );
 }
 
-// Helper Components
-function SectionHeader({ icon, title, subtitle }: { icon: string; title: string; subtitle: string }) {
+// Helper function to format time
+function formatTime(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit',
+    hour12: true 
+  });
+}
+
+// Section Header Component
+function SectionHeader({ 
+  icon, 
+  title, 
+  subtitle,
+  highlight = false 
+}: { 
+  icon: string; 
+  title: string; 
+  subtitle: string;
+  highlight?: boolean;
+}) {
   return (
-    <div className="mb-4">
-      <h2 className="text-xl font-semibold text-white flex items-center gap-2">
-        <span className="text-2xl">{icon}</span>
+    <div className="mb-6">
+      <motion.h2 
+        className={`text-xl sm:text-2xl font-bold text-white flex items-center gap-3 ${highlight ? 'text-gradient' : ''}`}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+      >
+        <span className="text-2xl sm:text-3xl">{icon}</span>
         {title}
-      </h2>
-      <p className="text-slate-400 text-sm mt-1">{subtitle}</p>
+      </motion.h2>
+      <p className="text-slate-400 text-sm mt-1 ml-10 sm:ml-12">{subtitle}</p>
     </div>
   );
 }
 
-function StatCard({ icon, value, label, color }: { 
+// Enhanced Stat Card Component
+function StatCard({ 
+  icon, 
+  value, 
+  label, 
+  color,
+  delay = 0 
+}: { 
   icon: string; 
   value: string | number; 
   label: string;
   color: 'purple' | 'orange' | 'emerald' | 'cyan';
+  delay?: number;
 }) {
-  const colorClasses = {
-    purple: 'from-purple-900/30 to-purple-800/20 border-purple-500/30',
-    orange: 'from-orange-900/30 to-orange-800/20 border-orange-500/30',
-    emerald: 'from-emerald-900/30 to-emerald-800/20 border-emerald-500/30',
-    cyan: 'from-cyan-900/30 to-cyan-800/20 border-cyan-500/30',
+  const colorStyles = {
+    purple: {
+      gradient: 'from-purple-500/20 to-purple-600/5',
+      border: 'border-purple-500/20',
+      text: 'text-purple-400',
+      glow: 'hover:shadow-purple-500/20'
+    },
+    orange: {
+      gradient: 'from-orange-500/20 to-orange-600/5',
+      border: 'border-orange-500/20',
+      text: 'text-orange-400',
+      glow: 'hover:shadow-orange-500/20'
+    },
+    emerald: {
+      gradient: 'from-emerald-500/20 to-emerald-600/5',
+      border: 'border-emerald-500/20',
+      text: 'text-emerald-400',
+      glow: 'hover:shadow-emerald-500/20'
+    },
+    cyan: {
+      gradient: 'from-cyan-500/20 to-cyan-600/5',
+      border: 'border-cyan-500/20',
+      text: 'text-cyan-400',
+      glow: 'hover:shadow-cyan-500/20'
+    },
   };
 
-  const textColors = {
-    purple: 'text-purple-400',
-    orange: 'text-orange-400',
-    emerald: 'text-emerald-400',
-    cyan: 'text-cyan-400',
-  };
+  const styles = colorStyles[color];
 
   return (
     <motion.div
-      whileHover={{ scale: 1.02 }}
-      className={`bg-gradient-to-br ${colorClasses[color]} rounded-xl p-4 border backdrop-blur-sm`}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay, duration: 0.4 }}
+      whileHover={{ scale: 1.02, y: -2 }}
+      className={`
+        glass-card glass-card-hover rounded-xl p-4 sm:p-5 
+        bg-gradient-to-br ${styles.gradient} 
+        border ${styles.border}
+        transition-all duration-300 ${styles.glow} hover:shadow-lg
+      `}
     >
-      <div className="flex items-center gap-3">
-        <span className="text-2xl">{icon}</span>
+      <div className="flex items-center gap-3 sm:gap-4">
+        <motion.span 
+          className="text-3xl sm:text-4xl"
+          animate={{ scale: [1, 1.1, 1] }}
+          transition={{ duration: 2, repeat: Infinity, delay }}
+        >
+          {icon}
+        </motion.span>
         <div>
-          <p className={`text-xl font-bold ${textColors[color]}`}>{value}</p>
-          <p className="text-xs text-slate-400">{label}</p>
+          <p className={`text-2xl sm:text-3xl font-bold ${styles.text} stat-number`}>
+            {value}
+          </p>
+          <p className="text-xs sm:text-sm text-slate-400">{label}</p>
         </div>
       </div>
     </motion.div>

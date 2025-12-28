@@ -13,7 +13,7 @@ This document explains the technical architecture and design decisions for your 
 │                                                                  │
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
 │   │   Reddit    │───▶│  Next.js    │───▶│    Groq     │        │
-│   │    API      │    │  API Routes │    │    LLM      │        │
+│   │    API      │    │  API Routes │    │   LLM AI    │        │
 │   └─────────────┘    └─────────────┘    └─────────────┘        │
 │         │                   │                   │               │
 │         │                   ▼                   │               │
@@ -46,25 +46,28 @@ User clicks "Refresh"
         ▼
 fetchRedditPosts() from lib/reddit.ts
         │
-        ├── Has Reddit credentials? ──▶ Fetch live data from Reddit
-        │                                    │
-        │                                    ▼
-        │                              Subreddits searched:
-        │                              - r/Supplements
-        │                              - r/fitness
-        │                              - r/indianfitness
-        │                              - r/gainit
-        │                              - r/nutrition
+        ▼
+Authenticate with Reddit API using OAuth
         │
-        └── No credentials? ──▶ Return realistic mock data
-                                      │
-                                      ▼
-                                Posts + Comments
+        ▼
+Search across subreddits:
+  - r/Supplements
+  - r/fitness  
+  - r/indianfitness
+  - r/gainit
+  - r/nutrition
+  - r/bodybuilding
+        │
+        ▼
+Fetch posts + top comments
+        │
+        ▼
+Return real Reddit data
 ```
 
 ### 2. AI Analysis (The "Brain")
 ```
-Posts + Comments
+Posts + Comments from Reddit
         │
         ▼
 analyzeWithGroq() from lib/groq.ts
@@ -73,16 +76,14 @@ analyzeWithGroq() from lib/groq.ts
 Structured Prompt to Llama 3.1 70B:
 ┌─────────────────────────────────────────┐
 │ "You are a product analyst for         │
-│  HealthKart. Analyze these discussions │
-│  and extract:                           │
+│  HealthKart. Analyze these REAL        │
+│  discussions and extract:               │
 │  1. Trending flavor keywords            │
 │  2. Recommendations with 'Why it works' │
 │  3. The #1 Golden Candidate            │
 │                                         │
-│  Brand profiles provided for matching:  │
-│  - MuscleBlaze (hardcore gym)           │
-│  - HK Vitals (wellness lifestyle)       │
-│  - TrueBasics (premium health)          │
+│  ONLY use data actually present.       │
+│  Do NOT hallucinate or invent trends.  │
 └─────────────────────────────────────────┘
         │
         ▼
@@ -90,6 +91,7 @@ JSON Response with:
 - trendKeywords[]
 - recommendations[]
 - goldenCandidate
+- dataQuality metrics
 ```
 
 ### 3. Dashboard Rendering (The "Face")
@@ -116,32 +118,35 @@ React Dashboard (app/page.tsx)
 
 ---
 
-## How the AI Makes Decisions
+## How the AI Makes Decisions (Avoiding Hallucinations)
 
-### Avoiding Hallucinations
+### 1. Grounded in Real Data
+- The AI ONLY analyzes actual Reddit posts and comments
+- No synthetic or mock data is used
+- Every recommendation is traceable to real user discussions
 
-1. **Grounded in Real Data**: The AI only analyzes actual Reddit discussions, not imagined scenarios
+### 2. Structured Output with Validation
+```javascript
+// We use JSON mode to ensure parseable, structured output
+response_format: { type: 'json_object' }
 
-2. **Structured Output**: We use `response_format: { type: 'json_object' }` to ensure the AI returns valid, parseable JSON
-
-3. **Explicit Brand Profiles**: The prompt includes detailed brand descriptions so the AI makes informed matches
-
-4. **Supporting Evidence**: Every recommendation must include actual quotes from the data
-
-### Prompt Engineering
-
-The key to quality recommendations is the prompt structure:
-
+// Lower temperature for factual, consistent outputs
+temperature: 0.4  // (not 0.7 or higher which causes creativity/hallucination)
 ```
-❌ Bad: "Analyze these posts and suggest flavors"
 
-✅ Good: "You are a product analyst for HealthKart.
-         For each recommendation:
-         1. Explain WHY in plain business language
-         2. Include supporting user quotes
-         3. Mark as selected/rejected with reasoning
-         4. Match to the most appropriate brand"
+### 3. Explicit Instructions to Prevent Hallucination
+The prompt includes:
 ```
+"ONLY extract insights that are ACTUALLY present in the data"
+"Do NOT invent or hallucinate flavor requests"
+"Base recommendations on actual user pain points"
+```
+
+### 4. Supporting Evidence Required
+Every recommendation must include:
+- `supportingData`: Actual quotes or paraphrased insights from the data
+- `whyItWorks`: Plain business language explanation grounded in user discussions
+- `confidence`: Score based on volume and sentiment of real discussions
 
 ---
 
@@ -149,40 +154,48 @@ The key to quality recommendations is the prompt structure:
 
 ### Why This Layout?
 
-1. **Stats Bar at Top**: Immediate context (posts analyzed, keywords found, ideas generated)
-
-2. **Golden Candidate First**: The most important insight is above the fold - product managers see the #1 recommendation immediately
-
-3. **Trend Wall Middle**: Visual discovery - lets users explore what's trending before seeing recommendations
-
-4. **Decision Engine Last**: Detailed analysis for those who want to dig deeper
+1. **Stats Bar at Top**: Immediate context showing data source metrics
+2. **Golden Candidate First**: Most important insight above the fold
+3. **Trend Wall Middle**: Visual discovery of trending keywords
+4. **Decision Engine Last**: Detailed analysis for deep dives
 
 ### Why Dark Mode?
 
-- Matches the "hardcore fitness" vibe of MuscleBlaze
-- Reduces eye strain for extended analysis sessions
-- Premium, modern aesthetic that fits TrueBasics positioning
-- Better contrast for data visualization colors
+- **Fitness Vibe**: Matches MuscleBlaze's hardcore aesthetic
+- **Eye Comfort**: Reduces strain during extended analysis
+- **Premium Feel**: Aligns with TrueBasics positioning
+- **Better Contrast**: Data visualizations pop more
 
-### Color Coding
+### Glassmorphism Design
 
-| Color | Meaning |
-|-------|---------|
-| Green/Emerald | Positive sentiment, selected ideas |
-| Red/Rose | Negative sentiment, rejected ideas |
-| Yellow/Gold | Golden candidate, top recommendation |
-| Purple | Brand accent, interactive elements |
-| Brand colors | MuscleBlaze (orange), HK Vitals (teal), TrueBasics (purple) |
+We use glassmorphism (frosted glass effect) because:
+- Creates depth without heavy borders
+- Modern, premium appearance
+- Works well with the brand colors
+- Allows background gradients to show through
+
+### Color System
+
+| Color | Usage |
+|-------|-------|
+| 🟢 Emerald | Positive sentiment, selected ideas |
+| 🔴 Red | Negative sentiment, rejected ideas |
+| 🟡 Gold/Yellow | Golden candidate, top recommendation |
+| 🟣 Purple | Interactive elements, primary actions |
+| 🟠 Orange | MuscleBlaze brand |
+| 🩵 Teal | HK Vitals brand |
+| 🟣 Purple | TrueBasics brand |
 
 ---
 
 ## API Endpoints
 
 ### GET /api/analyze
-Main endpoint that:
-1. Fetches Reddit data
-2. Runs Groq analysis
-3. Returns combined response
+Main endpoint that orchestrates the entire flow:
+1. Validates API credentials
+2. Fetches Reddit data
+3. Runs Groq AI analysis
+4. Returns combined response
 
 **Response:**
 ```json
@@ -191,7 +204,7 @@ Main endpoint that:
   "flavorMentions": [...],
   "recommendations": [...],
   "goldenCandidate": {...},
-  "rawPostCount": 12,
+  "rawPostCount": 45,
   "analyzedAt": "2024-01-15T10:30:00Z"
 }
 ```
@@ -209,74 +222,116 @@ Raw Reddit data endpoint (for debugging):
 
 ---
 
+## Error Handling
+
+The app handles these scenarios gracefully:
+
+1. **Missing Credentials**: Clear message showing which env vars are missing
+2. **Reddit Auth Failure**: Helpful troubleshooting guidance
+3. **Groq API Error**: Retry option with error details
+4. **No Data Found**: Message suggesting to wait and retry
+5. **Rate Limiting**: Graceful degradation with caching headers
+
+---
+
+## Reddit API Setup (Detailed)
+
+### Why "script" Type?
+Reddit offers several app types:
+- **web app**: For apps with user login (OAuth flow)
+- **installed app**: For mobile/desktop apps
+- **script**: For personal use/server-side apps ✅
+
+We use "script" because:
+- Simplest authentication (username/password)
+- No redirect URI needed
+- Perfect for server-side API calls
+- No user interaction required
+
+### Getting Credentials
+
+1. Visit https://www.reddit.com/prefs/apps
+2. Click "create another app..."
+3. Fill in:
+   - Name: `FlavorScout`
+   - Type: `script`
+   - Redirect URI: `http://localhost:3000`
+4. Copy:
+   - `client_id`: Under app name
+   - `client_secret`: Click "edit" to reveal
+
+---
+
 ## Technology Choices
 
 ### Why Next.js?
-- Single deployment (frontend + API)
+- Single deployment (frontend + API routes)
 - Free hosting on Vercel
 - Built-in TypeScript support
 - App Router for modern React patterns
+- Edge functions for fast API responses
 
 ### Why Groq?
-- Fastest LLM inference available
+- Fastest LLM inference available (~100 tokens/sec)
 - Free tier with generous limits
-- Llama 3.1 70B is excellent for analysis tasks
+- Llama 3.1 70B excels at analysis tasks
 - JSON mode for structured outputs
 
 ### Why Reddit?
 - Rich discussions about supplements and flavors
 - Active Indian fitness community (r/indianfitness)
-- User opinions are authentic and detailed
+- Authentic, detailed user opinions
 - Free API access with simple authentication
+
+### Why Snoowrap?
+- Official-feeling Reddit wrapper for JavaScript
+- Handles OAuth automatically
+- Supports all Reddit API features
+- Well-maintained and documented
 
 ---
 
-## Deployment
+## Demo Script for Loom Video (5 mins)
 
-### Vercel (Recommended)
-1. Push to GitHub
-2. Import to Vercel
-3. Add environment variables
-4. Auto-deploys on every push
+### 1. Intro (30 seconds)
+"This is Flavor Scout - an AI-powered tool that discovers viral flavor trends from real social media discussions for HealthKart's brands."
 
-### Environment Variables
-```
-GROQ_API_KEY=gsk_xxx...
-REDDIT_CLIENT_ID=xxx (optional)
-REDDIT_CLIENT_SECRET=xxx (optional)
-REDDIT_USERNAME=xxx (optional)
-REDDIT_PASSWORD=xxx (optional)
-```
+### 2. Live Dashboard Demo (1.5 minutes)
+- Show the Golden Candidate card
+- Explain the confidence score and market opportunity
+- Demonstrate the Trend Wall word cloud
+- Click through brand filters
+
+### 3. How AI Avoids Hallucinations (1 minute)
+- Show actual Reddit discussions
+- Explain how quotes are extracted
+- Demonstrate the supporting data
+- Mention temperature settings and JSON mode
+
+### 4. Decision Engine Walkthrough (1 minute)
+- Show selected vs rejected ideas
+- Explain why ideas get rejected
+- Read a "Why it works" explanation
+
+### 5. Technical Overview (30 seconds)
+- Quick architecture diagram
+- Mention Reddit API and Groq
+- Show the Vercel deployment
+
+### 6. Closing (30 seconds)
+"This tool gives product teams real consumer insights to make data-driven flavor decisions. No guessing - just real user discussions analyzed by AI."
 
 ---
 
 ## Future Enhancements
 
-1. **More Data Sources**: Add Twitter/X, Instagram, Amazon reviews
+1. **More Data Sources**: Twitter/X, Instagram, Amazon reviews
 2. **Historical Trends**: Track flavor mentions over time
-3. **Export Reports**: PDF/Excel export for stakeholders
-4. **Slack Integration**: Alert product team when new trends emerge
-5. **A/B Testing Tracker**: Compare recommended vs launched flavors
+3. **Export Reports**: PDF/Excel for stakeholders
+4. **Slack Integration**: Alert team on new trends
+5. **A/B Testing Tracker**: Compare recommended vs launched
+6. **Competitor Analysis**: Track competitor flavor releases
 
 ---
 
-## Demo Script for Loom Video
-
-1. **Intro (30s)**: "This is Flavor Scout - an AI tool that discovers viral flavor trends from social media"
-
-2. **Show Dashboard (1 min)**: Walk through each section, explain what users see
-
-3. **Explain AI (1 min)**: Show how the prompt engineering works, why recommendations are trustworthy
-
-4. **Brand Matching (30s)**: Filter by brand, explain the matching logic
-
-5. **Technical Overview (1 min)**: Quick architecture explanation
-
-6. **Refresh Demo (30s)**: Show the loading state, new data coming in
-
-7. **Closing (30s)**: Call to action, next steps
-
----
-
-Built with ❤️ for HealthKart
-
+Built with ❤️ for HealthKart by Shrayna Srivastava
