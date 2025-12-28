@@ -184,7 +184,7 @@ export default function Dashboard() {
           <StatCard 
             icon="📊" 
             value={data?.rawPostCount || 0} 
-            label="Reddit Posts Analyzed" 
+            label="News Articles Analyzed" 
             color="purple"
             delay={0}
           />
@@ -224,7 +224,7 @@ export default function Dashboard() {
                 icon="👑" 
                 title="Golden Recommendation" 
                 subtitle={selectedBrand === 'all' 
-                  ? "The #1 flavor opportunity based on AI analysis of real social discussions"
+                  ? "The #1 flavor opportunity based on AI analysis of industry news"
                   : `Top recommendation for ${selectedBrand}`}
                 highlight
               />
@@ -243,7 +243,7 @@ export default function Dashboard() {
             <SectionHeader 
               icon="📈" 
               title="Trend Wall" 
-              subtitle="Real-time flavor keywords from Reddit discussions"
+              subtitle="Trending flavor keywords from news and industry content"
             />
             <TrendWall keywords={data.trendKeywords} />
           </motion.section>
@@ -279,7 +279,7 @@ export default function Dashboard() {
             <span className="text-slate-400 text-sm">Flavor Scout</span>
           </div>
           <p className="text-slate-500 text-sm mb-2">
-            Powered by <span className="text-purple-400">Groq AI</span> + <span className="text-orange-400">Reddit Data</span>
+            Powered by <span className="text-purple-400">Groq AI</span> + <span className="text-orange-400">NewsAPI</span>
           </p>
           <div className="flex justify-center items-center gap-4 text-sm">
             <span className="text-[#FF6B35]">● MuscleBlaze</span>

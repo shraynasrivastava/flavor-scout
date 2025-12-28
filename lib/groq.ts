@@ -19,21 +19,21 @@ function getGroqClient(): Groq {
   return new Groq({ apiKey });
 }
 
-// Combine posts and comments into analyzable text
+// Combine articles and content into analyzable text
 function prepareTextForAnalysis(posts: RedditPost[], comments: RedditComment[]): string {
-  const postTexts = posts.map(p => 
-    `[POST from r/${p.subreddit} | Score: ${p.score}]\nTitle: ${p.title}\n${p.selftext}`
+  const articleTexts = posts.map(p => 
+    `[ARTICLE from ${p.subreddit}]\nHeadline: ${p.title}\n${p.selftext}`
   ).join('\n\n---\n\n');
   
-  const commentTexts = comments.map(c => 
-    `[COMMENT | Score: ${c.score}]\n${c.body}`
+  const contentTexts = comments.map(c => 
+    `[ARTICLE CONTENT from ${c.author}]\n${c.body}`
   ).join('\n\n');
   
-  return `=== REDDIT POSTS ===\n${postTexts}\n\n=== TOP COMMENTS ===\n${commentTexts}`;
+  return `=== NEWS ARTICLES ===\n${articleTexts}\n\n=== ARTICLE CONTENT ===\n${contentTexts}`;
 }
 
 // Main analysis prompt
-const ANALYSIS_PROMPT = `You are a senior product analyst at HealthKart, India's leading health and fitness brand. Your job is to analyze real social media discussions to discover flavor trends and opportunities for these brands:
+const ANALYSIS_PROMPT = `You are a senior product analyst at HealthKart, India's leading health and fitness brand. Your job is to analyze news articles and industry content about supplements, fitness, and health trends to discover flavor opportunities for these brands:
 
 **BRAND PROFILES:**
 
@@ -57,7 +57,7 @@ const ANALYSIS_PROMPT = `You are a senior product analyst at HealthKart, India's
 
 **YOUR ANALYSIS TASK:**
 
-Analyze the social media discussions below and provide:
+Analyze the news articles and industry content below and provide:
 
 1. **TRENDING KEYWORDS**: Extract flavor-related keywords/phrases that users mention. For each:
    - Count how many times it appears (or estimate based on discussion volume)
@@ -113,7 +113,7 @@ Analyze the social media discussions below and provide:
   }
 }
 
-**SOCIAL MEDIA DATA TO ANALYZE:**
+**NEWS ARTICLES TO ANALYZE:**
 
 `;
 

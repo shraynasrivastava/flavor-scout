@@ -12,8 +12,8 @@ This document explains the technical architecture and design decisions for your 
 ├─────────────────────────────────────────────────────────────────┤
 │                                                                  │
 │   ┌─────────────┐    ┌─────────────┐    ┌─────────────┐        │
-│   │   Reddit    │───▶│  Next.js    │───▶│    Groq     │        │
-│   │    API      │    │  API Routes │    │   LLM AI    │        │
+│   │   NewsAPI   │───▶│  Next.js    │───▶│    Groq     │        │
+│   │   (Data)    │    │  API Routes │    │   LLM AI    │        │
 │   └─────────────┘    └─────────────┘    └─────────────┘        │
 │         │                   │                   │               │
 │         │                   ▼                   │               │
@@ -44,30 +44,26 @@ User clicks "Refresh"
 /api/analyze (Next.js API Route)
         │
         ▼
-fetchRedditPosts() from lib/reddit.ts
+fetchNewsArticles() from lib/news.ts
         │
         ▼
-Authenticate with Reddit API using OAuth
+Call NewsAPI with search queries:
+  - "protein powder flavors India"
+  - "MuscleBlaze new flavor"
+  - "HealthKart supplements"
+  - "whey protein taste review"
+  - "supplement trends India"
         │
         ▼
-Search across subreddits:
-  - r/Supplements
-  - r/fitness  
-  - r/indianfitness
-  - r/gainit
-  - r/nutrition
-  - r/bodybuilding
+Fetch articles + content
         │
         ▼
-Fetch posts + top comments
-        │
-        ▼
-Return real Reddit data
+Return news data for analysis
 ```
 
 ### 2. AI Analysis (The "Brain")
 ```
-Posts + Comments from Reddit
+Articles + Content from NewsAPI
         │
         ▼
 analyzeWithGroq() from lib/groq.ts
@@ -76,8 +72,8 @@ analyzeWithGroq() from lib/groq.ts
 Structured Prompt to Llama 3.1 70B:
 ┌─────────────────────────────────────────┐
 │ "You are a product analyst for         │
-│  HealthKart. Analyze these REAL        │
-│  discussions and extract:               │
+│  HealthKart. Analyze these news        │
+│  articles and extract:                  │
 │  1. Trending flavor keywords            │
 │  2. Recommendations with 'Why it works' │
 │  3. The #1 Golden Candidate            │
@@ -121,9 +117,9 @@ React Dashboard (app/page.tsx)
 ## How the AI Makes Decisions (Avoiding Hallucinations)
 
 ### 1. Grounded in Real Data
-- The AI ONLY analyzes actual Reddit posts and comments
+- The AI ONLY analyzes actual news articles
 - No synthetic or mock data is used
-- Every recommendation is traceable to real user discussions
+- Every recommendation is traceable to real industry content
 
 ### 2. Structured Output with Validation
 ```javascript
@@ -139,14 +135,14 @@ The prompt includes:
 ```
 "ONLY extract insights that are ACTUALLY present in the data"
 "Do NOT invent or hallucinate flavor requests"
-"Base recommendations on actual user pain points"
+"Base recommendations on actual article content"
 ```
 
 ### 4. Supporting Evidence Required
 Every recommendation must include:
 - `supportingData`: Actual quotes or paraphrased insights from the data
-- `whyItWorks`: Plain business language explanation grounded in user discussions
-- `confidence`: Score based on volume and sentiment of real discussions
+- `whyItWorks`: Plain business language explanation grounded in articles
+- `confidence`: Score based on volume and sentiment of real content
 
 ---
 
@@ -193,7 +189,7 @@ We use glassmorphism (frosted glass effect) because:
 ### GET /api/analyze
 Main endpoint that orchestrates the entire flow:
 1. Validates API credentials
-2. Fetches Reddit data
+2. Fetches news articles
 3. Runs Groq AI analysis
 4. Returns combined response
 
@@ -209,13 +205,13 @@ Main endpoint that orchestrates the entire flow:
 }
 ```
 
-### GET /api/reddit
-Raw Reddit data endpoint (for debugging):
+### GET /api/news
+Raw news data endpoint (for debugging):
 ```json
 {
-  "posts": [...],
-  "comments": [...],
-  "subreddits": [...],
+  "articles": [...],
+  "contentExcerpts": [...],
+  "sources": [...],
   "fetchedAt": "..."
 }
 ```
@@ -227,38 +223,38 @@ Raw Reddit data endpoint (for debugging):
 The app handles these scenarios gracefully:
 
 1. **Missing Credentials**: Clear message showing which env vars are missing
-2. **Reddit Auth Failure**: Helpful troubleshooting guidance
+2. **NewsAPI Auth Failure**: Helpful troubleshooting guidance
 3. **Groq API Error**: Retry option with error details
-4. **No Data Found**: Message suggesting to wait and retry
+4. **No Articles Found**: Message suggesting to wait and retry
 5. **Rate Limiting**: Graceful degradation with caching headers
 
 ---
 
-## Reddit API Setup (Detailed)
+## NewsAPI Setup
 
-### Why "script" Type?
-Reddit offers several app types:
-- **web app**: For apps with user login (OAuth flow)
-- **installed app**: For mobile/desktop apps
-- **script**: For personal use/server-side apps ✅
+### Getting Your Free API Key
 
-We use "script" because:
-- Simplest authentication (username/password)
-- No redirect URI needed
-- Perfect for server-side API calls
-- No user interaction required
+1. Visit https://newsapi.org/register
+2. Sign up with email or Google
+3. Copy your API key from the dashboard
+4. Add to `.env.local`:
+   ```
+   NEWS_API_KEY=your_key_here
+   ```
 
-### Getting Credentials
+### Free Tier Limits
+- 100 requests per day
+- Articles from past month
+- Perfect for development and demos
 
-1. Visit https://www.reddit.com/prefs/apps
-2. Click "create another app..."
-3. Fill in:
-   - Name: `FlavorScout`
-   - Type: `script`
-   - Redirect URI: `http://localhost:3000`
-4. Copy:
-   - `client_id`: Under app name
-   - `client_secret`: Click "edit" to reveal
+### Search Queries Used
+The app searches for relevant content using these queries:
+- "protein powder flavors India"
+- "MuscleBlaze new flavor"
+- "HealthKart supplements"
+- "whey protein taste review India"
+- "supplement trends India"
+- "fitness nutrition India"
 
 ---
 
@@ -277,24 +273,19 @@ We use "script" because:
 - Llama 3.1 70B excels at analysis tasks
 - JSON mode for structured outputs
 
-### Why Reddit?
-- Rich discussions about supplements and flavors
-- Active Indian fitness community (r/indianfitness)
-- Authentic, detailed user opinions
-- Free API access with simple authentication
-
-### Why Snoowrap?
-- Official-feeling Reddit wrapper for JavaScript
-- Handles OAuth automatically
-- Supports all Reddit API features
-- Well-maintained and documented
+### Why NewsAPI?
+- Free tier with 100 requests/day
+- Searches news from multiple sources
+- Articles about supplements, fitness, health
+- Simple API key authentication
+- Returns headlines, descriptions, and content
 
 ---
 
 ## Demo Script for Loom Video (5 mins)
 
 ### 1. Intro (30 seconds)
-"This is Flavor Scout - an AI-powered tool that discovers viral flavor trends from real social media discussions for HealthKart's brands."
+"This is Flavor Scout - an AI-powered tool that discovers viral flavor trends from news articles and industry content for HealthKart's brands."
 
 ### 2. Live Dashboard Demo (1.5 minutes)
 - Show the Golden Candidate card
@@ -303,8 +294,8 @@ We use "script" because:
 - Click through brand filters
 
 ### 3. How AI Avoids Hallucinations (1 minute)
-- Show actual Reddit discussions
-- Explain how quotes are extracted
+- Show actual news articles being analyzed
+- Explain how insights are extracted
 - Demonstrate the supporting data
 - Mention temperature settings and JSON mode
 
@@ -315,11 +306,11 @@ We use "script" because:
 
 ### 5. Technical Overview (30 seconds)
 - Quick architecture diagram
-- Mention Reddit API and Groq
+- Mention NewsAPI and Groq
 - Show the Vercel deployment
 
 ### 6. Closing (30 seconds)
-"This tool gives product teams real consumer insights to make data-driven flavor decisions. No guessing - just real user discussions analyzed by AI."
+"This tool gives product teams real industry insights to make data-driven flavor decisions. No guessing - just real news content analyzed by AI."
 
 ---
 
