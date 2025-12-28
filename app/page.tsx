@@ -16,17 +16,25 @@ interface ApiError {
   missingVars?: string[];
 }
 
+interface CacheInfo {
+  usedCache: boolean;
+  cacheAgeSeconds: number;
+  totalApiFetches: number;
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<AnalysisResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
   const [selectedBrand, setSelectedBrand] = useState<Brand | 'all'>('all');
+  const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
 
-  const fetchAnalysis = useCallback(async () => {
+  const fetchAnalysis = useCallback(async (forceRefresh: boolean = false) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/analyze');
+      const url = forceRefresh ? '/api/analyze?refresh=true' : '/api/analyze';
+      const response = await fetch(url);
       const result = await response.json();
       
       if (!response.ok) {
@@ -35,6 +43,9 @@ export default function Dashboard() {
       }
       
       setData(result);
+      if (result.cacheInfo) {
+        setCacheInfo(result.cacheInfo);
+      }
     } catch (err) {
       setError({
         error: 'Network Error',
@@ -47,7 +58,7 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    fetchAnalysis();
+    fetchAnalysis(false);
   }, [fetchAnalysis]);
 
   // Filter recommendations by brand
@@ -104,7 +115,7 @@ export default function Dashboard() {
             )}
             
             <button
-              onClick={fetchAnalysis}
+              onClick={() => fetchAnalysis(false)}
               className="btn-primary px-8 py-3 rounded-xl text-white font-medium"
             >
               Try Again
@@ -153,20 +164,42 @@ export default function Dashboard() {
             {/* Controls */}
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <BrandSelector selected={selectedBrand} onSelect={setSelectedBrand} />
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={fetchAnalysis}
-                className="btn-primary flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-medium"
-              >
-                <motion.span
-                  animate={{ rotate: loading ? 360 : 0 }}
-                  transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
+              <div className="flex items-center gap-2">
+                {/* Cache indicator */}
+                {cacheInfo && !loading && (
+                  <span className="text-xs text-slate-500 hidden sm:block">
+                    {cacheInfo.usedCache 
+                      ? `📦 Cached (${Math.floor(cacheInfo.cacheAgeSeconds / 60)}m ago)`
+                      : '🔄 Fresh data'
+                    }
+                  </span>
+                )}
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => fetchAnalysis(false)}
+                  className="btn-secondary flex items-center gap-2 px-4 py-2 rounded-xl text-slate-300 text-sm font-medium"
+                  title="Use cached data if available"
                 >
-                  🔄
-                </motion.span>
-                Refresh Analysis
-              </motion.button>
+                  <motion.span
+                    animate={{ rotate: loading ? 360 : 0 }}
+                    transition={{ duration: 1, repeat: loading ? Infinity : 0, ease: "linear" }}
+                  >
+                    🔄
+                  </motion.span>
+                  <span className="hidden sm:inline">Refresh</span>
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => fetchAnalysis(true)}
+                  className="btn-primary flex items-center gap-2 px-4 py-2 rounded-xl text-white text-sm font-medium"
+                  title="Force fetch new data from NewsAPI"
+                >
+                  ⚡
+                  <span className="hidden sm:inline">Force New</span>
+                </motion.button>
+              </div>
             </div>
           </div>
         </div>

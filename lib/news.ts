@@ -1,5 +1,61 @@
 import { NewsArticle, ContentExcerpt } from './types';
 
+// ============================================
+// CACHE CONFIGURATION
+// ============================================
+
+// Cache duration in milliseconds (10 minutes)
+const CACHE_TTL = 10 * 60 * 1000;
+
+// In-memory cache storage
+interface NewsCache {
+  data: { posts: NewsArticle[]; comments: ContentExcerpt[] } | null;
+  timestamp: number;
+  fetchCount: number;
+}
+
+const cache: NewsCache = {
+  data: null,
+  timestamp: 0,
+  fetchCount: 0
+};
+
+// Check if cache is valid
+function isCacheValid(): boolean {
+  if (!cache.data) return false;
+  const now = Date.now();
+  const age = now - cache.timestamp;
+  return age < CACHE_TTL;
+}
+
+// Get cache age in human-readable format
+export function getCacheInfo(): { 
+  isCached: boolean; 
+  ageSeconds: number; 
+  fetchCount: number;
+  articleCount: number;
+} {
+  const now = Date.now();
+  const ageSeconds = cache.timestamp ? Math.floor((now - cache.timestamp) / 1000) : 0;
+  return {
+    isCached: isCacheValid(),
+    ageSeconds,
+    fetchCount: cache.fetchCount,
+    articleCount: cache.data?.posts.length || 0
+  };
+}
+
+// Force clear cache (useful for manual refresh)
+export function clearCache(): void {
+  cache.data = null;
+  cache.timestamp = 0;
+  console.log('[NewsAPI Cache] Cache cleared');
+}
+
+// ============================================
+// SEARCH QUERIES
+// ============================================
+
 // Expanded search queries for comprehensive coverage
 export const SEARCH_QUERIES = [
   // HealthKart & Brand Specific
@@ -80,10 +136,23 @@ export function hasNewsAPICredentials(): boolean {
   return !!process.env.NEWS_API_KEY;
 }
 
+// ============================================
+// MAIN FETCH FUNCTION WITH CACHING
+// ============================================
+
 // Fetch news articles about supplements and flavors
+// Returns cached data if available and not expired
 export async function fetchNewsArticles(
-  limit: number = 200
+  limit: number = 200,
+  forceRefresh: boolean = false
 ): Promise<{ posts: NewsArticle[]; comments: ContentExcerpt[] }> {
+  
+  // Check cache first (unless force refresh is requested)
+  if (!forceRefresh && isCacheValid() && cache.data) {
+    console.log(`[NewsAPI Cache] Returning cached data (${cache.data.posts.length} articles, age: ${Math.floor((Date.now() - cache.timestamp) / 1000)}s)`);
+    return cache.data;
+  }
+
   const apiKey = process.env.NEWS_API_KEY;
   
   if (!apiKey) {
@@ -91,6 +160,8 @@ export async function fetchNewsArticles(
       'NewsAPI key is required. Please configure NEWS_API_KEY in your environment variables. Get your free key at https://newsapi.org/register'
     );
   }
+
+  console.log('[NewsAPI] Fetching fresh data from API...');
 
   const allPosts: NewsArticle[] = [];
   const allComments: ContentExcerpt[] = [];
@@ -126,10 +197,10 @@ export async function fetchNewsArticles(
             throw new Error('NewsAPI requires HTTPS in production. This works in development.');
           }
           if (response.status === 429) {
-            console.warn('NewsAPI rate limit reached, using collected results');
+            console.warn('[NewsAPI] Rate limit reached, using collected results');
             break;
           }
-          console.warn(`NewsAPI error for "${query}":`, errorData.message);
+          console.warn(`[NewsAPI] Error for "${query}":`, errorData.message);
           continue;
         }
 
@@ -187,7 +258,7 @@ export async function fetchNewsArticles(
           throw error;
         }
         // Continue with other queries if one fails
-        console.warn(`Failed to fetch news for query "${query}":`, error);
+        console.warn(`[NewsAPI] Failed to fetch for query "${query}":`, error);
         continue;
       }
     }
@@ -241,9 +312,15 @@ export async function fetchNewsArticles(
       throw new Error('No news articles found. Please try again later or check your API key.');
     }
 
-    console.log(`[NewsAPI] Fetched ${allPosts.length} articles and ${allComments.length} content excerpts`);
+    // Update cache with new data
+    cache.data = { posts: allPosts, comments: allComments };
+    cache.timestamp = Date.now();
+    cache.fetchCount++;
 
-    return { posts: allPosts, comments: allComments };
+    console.log(`[NewsAPI] Fetched ${allPosts.length} articles and ${allComments.length} excerpts (fetch #${cache.fetchCount})`);
+    console.log(`[NewsAPI Cache] Data cached for ${CACHE_TTL / 60000} minutes`);
+
+    return cache.data;
   } catch (error) {
     if (error instanceof Error) {
       throw error;

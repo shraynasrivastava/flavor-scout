@@ -1,13 +1,17 @@
-import { NextResponse } from 'next/server';
-import { fetchNewsArticles } from '@/lib/news';
+import { NextRequest, NextResponse } from 'next/server';
+import { fetchNewsArticles, getCacheInfo } from '@/lib/news';
 import { analyzeWithGroq } from '@/lib/groq';
 import { AnalysisResponse, FlavorMention } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60; // Allow up to 60 seconds for API calls
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Check if force refresh is requested via query param
+    const searchParams = request.nextUrl.searchParams;
+    const forceRefresh = searchParams.get('refresh') === 'true';
+
     // Validate environment variables first
     const missingVars = [];
     if (!process.env.NEWS_API_KEY) missingVars.push('NEWS_API_KEY');
@@ -25,10 +29,18 @@ export async function GET() {
       );
     }
 
-    // Step 1: Fetch news articles about supplements and flavors
-    console.log('[Flavor Scout] Fetching news articles...');
-    const { posts, comments } = await fetchNewsArticles(100);
-    console.log(`[Flavor Scout] Fetched ${posts.length} articles and ${comments.length} content excerpts`);
+    // Get cache info before fetching
+    const cacheInfoBefore = getCacheInfo();
+    
+    // Step 1: Fetch news articles (uses cache if available)
+    console.log(`[Flavor Scout] Fetching news articles... (forceRefresh: ${forceRefresh})`);
+    const { posts, comments } = await fetchNewsArticles(200, forceRefresh);
+    
+    // Get cache info after fetching
+    const cacheInfoAfter = getCacheInfo();
+    const usedCache = !forceRefresh && cacheInfoBefore.isCached;
+    
+    console.log(`[Flavor Scout] Got ${posts.length} articles (cached: ${usedCache})`);
 
     if (posts.length === 0) {
       return NextResponse.json(
@@ -42,7 +54,7 @@ export async function GET() {
 
     // Step 2: Analyze with Groq LLM
     console.log('[Flavor Scout] Analyzing with Groq AI...');
-    const { trendKeywords, recommendations, goldenCandidate, dataQuality } = await analyzeWithGroq(posts, comments);
+    const { trendKeywords, recommendations, goldenCandidate } = await analyzeWithGroq(posts, comments);
     console.log(`[Flavor Scout] Generated ${recommendations.length} recommendations`);
 
     // Step 3: Create flavor mentions summary from keywords
@@ -56,19 +68,31 @@ export async function GET() {
         sources: ['News Articles']
       }));
 
-    const response: AnalysisResponse = {
+    // Build response with cache info
+    const response: AnalysisResponse & { 
+      cacheInfo?: { 
+        usedCache: boolean; 
+        cacheAgeSeconds: number; 
+        totalApiFetches: number;
+      } 
+    } = {
       trendKeywords,
       flavorMentions,
       recommendations,
       goldenCandidate,
       rawPostCount: posts.length,
-      analyzedAt: new Date().toISOString()
+      analyzedAt: new Date().toISOString(),
+      cacheInfo: {
+        usedCache,
+        cacheAgeSeconds: cacheInfoAfter.ageSeconds,
+        totalApiFetches: cacheInfoAfter.fetchCount
+      }
     };
 
     // Add cache headers for better performance
     return NextResponse.json(response, {
       headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600'
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120'
       }
     });
   } catch (error) {
