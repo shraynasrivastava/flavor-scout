@@ -57,6 +57,12 @@ export default function Dashboard() {
       : data.recommendations.filter(r => r.targetBrand === selectedBrand)
     : [];
 
+  // Filter golden candidate by brand - only show if matches selected brand or 'all' is selected
+  const filteredGoldenCandidate = data?.goldenCandidate && 
+    (selectedBrand === 'all' || data.goldenCandidate.recommendation.targetBrand === selectedBrand)
+    ? data.goldenCandidate
+    : null;
+
   if (loading) return <LoadingState />;
 
   if (error) {
@@ -205,9 +211,9 @@ export default function Dashboard() {
           />
         </motion.div>
 
-        {/* Golden Candidate - Hero Section */}
+        {/* Golden Candidate - Hero Section (filtered by selected brand) */}
         <AnimatePresence>
-          {data?.goldenCandidate && (
+          {filteredGoldenCandidate && (
             <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -217,10 +223,12 @@ export default function Dashboard() {
               <SectionHeader 
                 icon="👑" 
                 title="Golden Recommendation" 
-                subtitle="The #1 flavor opportunity based on AI analysis of real social discussions"
+                subtitle={selectedBrand === 'all' 
+                  ? "The #1 flavor opportunity based on AI analysis of real social discussions"
+                  : `Top recommendation for ${selectedBrand}`}
                 highlight
               />
-              <GoldenCandidate candidate={data.goldenCandidate} />
+              <GoldenCandidate candidate={filteredGoldenCandidate} />
             </motion.section>
           )}
         </AnimatePresence>

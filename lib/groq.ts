@@ -162,7 +162,7 @@ export async function analyzeWithGroq(
       flavorName: String(rec.flavorName || 'Unknown Flavor'),
       productType: String(rec.productType || 'Supplement'),
       targetBrand: (rec.targetBrand as Brand) || 'MuscleBlaze',
-      confidence: Number(rec.confidence) || 50,
+      confidence: rec.confidence != null ? Number(rec.confidence) : 50,
       whyItWorks: String(rec.whyItWorks || 'Based on user discussions'),
       supportingData: Array.isArray(rec.supportingData) ? rec.supportingData.map(String) : [],
       status: (rec.status as 'selected' | 'rejected') || 'selected',
@@ -171,7 +171,7 @@ export async function analyzeWithGroq(
 
     const trendKeywords: TrendKeyword[] = (parsed.trendKeywords || []).map((kw: Record<string, unknown>) => ({
       text: String(kw.text || ''),
-      value: Number(kw.value) || 1,
+      value: kw.value != null ? Number(kw.value) : 1,
       sentiment: (kw.sentiment as 'positive' | 'negative' | 'neutral') || 'neutral'
     })).filter((kw: TrendKeyword) => kw.text.length > 0);
 
@@ -183,9 +183,15 @@ export async function analyzeWithGroq(
         goldenCandidate = {
           recommendation: topRec,
           rank: 1,
-          totalMentions: Number(parsed.goldenCandidate.totalMentions) || 10,
-          sentimentScore: Number(parsed.goldenCandidate.sentimentScore) || 0.8,
-          marketGap: String(parsed.goldenCandidate.marketGap || 'Strong market opportunity identified')
+          totalMentions: parsed.goldenCandidate.totalMentions != null 
+            ? Number(parsed.goldenCandidate.totalMentions) 
+            : 10,
+          sentimentScore: parsed.goldenCandidate.sentimentScore != null 
+            ? Number(parsed.goldenCandidate.sentimentScore) 
+            : 0.8,
+          marketGap: parsed.goldenCandidate.marketGap 
+            ? String(parsed.goldenCandidate.marketGap) 
+            : 'Strong market opportunity identified'
         };
       }
     }
@@ -208,7 +214,9 @@ export async function analyzeWithGroq(
     const dataQuality = {
       postsAnalyzed: posts.length,
       commentsAnalyzed: comments.length,
-      relevantDiscussions: Number(parsed.dataQuality?.relevantDiscussions) || Math.min(posts.length, 20)
+      relevantDiscussions: parsed.dataQuality?.relevantDiscussions != null 
+        ? Number(parsed.dataQuality.relevantDiscussions) 
+        : Math.min(posts.length, 20)
     };
 
     return { trendKeywords, recommendations, goldenCandidate, dataQuality };
