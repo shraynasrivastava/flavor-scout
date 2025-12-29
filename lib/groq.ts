@@ -146,7 +146,7 @@ const ANALYSIS_PROMPT = `You are a senior product analyst at HealthKart, India's
       "targetBrand": "MuscleBlaze|HK Vitals|TrueBasics",
       "confidence": 85,
       "whyItWorks": "CEO-level explanation in 1-2 sentences",
-      "supportingData": ["quote or insight 1", "insight 2"],
+      "supportingData": ["Actual quote or paraphrased insight from articles - e.g. 'Users on fitness forums requesting mango flavor options'", "Another specific insight from analyzed content"],
       "status": "selected|rejected",
       "rejectionReason": "only if rejected",
       "existingComparison": "How this compares to our current flavors for this product",
@@ -161,7 +161,7 @@ const ANALYSIS_PROMPT = `You are a senior product analyst at HealthKart, India's
     }
   ],
   "goldenCandidate": {
-    "recommendationId": "rec-1",
+    "recommendationId": "rec-1 (MUST match the flavor in the TOP trending keyword)",
     "totalMentions": 25,
     "sentimentScore": 0.92,
     "negativeMentions": 8,
@@ -195,6 +195,19 @@ const ANALYSIS_PROMPT = `You are a senior product analyst at HealthKart, India's
 - Our top sellers: Rich Chocolate (Biozyme), Cafe Mocha, Strawberry Shake
 - Underperforming: Malai Paneer, Kulfi (despite being unique Indian flavors)
 - Customer favorites from competitors: ON's Kaju Katli, MyProtein's Salted Caramel
+
+**CRITICAL: SUPPORTING DATA RULES:**
+❌ NEVER use generic labels like: "Customer reviews", "Social media trends", "Market research", "User feedback"
+✅ ALWAYS use SPECIFIC insights like:
+  - "Article mentions growing demand for Indian festive flavors in protein market"
+  - "Multiple fitness blogs discussing kesar pista as trending flavor"
+  - "Users requesting less sweet chocolate options in supplement forums"
+  - "News reports Optimum Nutrition's Kaju Katli success in India"
+
+**CRITICAL: GOLDEN CANDIDATE CONSISTENCY:**
+- The Golden Candidate MUST be a flavor that appears in your top 3 trending keywords
+- If "Mango Lassi" is your #1 trending keyword, the Golden Candidate should recommend "Mango Lassi"
+- This ensures consistency between Trend Wall and Golden Recommendation
 
 **NEWS ARTICLES TO ANALYZE:**
 
